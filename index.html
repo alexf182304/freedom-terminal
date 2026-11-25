@@ -538,6 +538,89 @@ input[type="range"] {
         0 0 32px rgba(90,255,90,0.22);
 }
 
+
+
+/* =================================
+   8. PERSONNEL AND FORCE REGISTRATION
+================================= */
+.workflow-panel {
+    position: absolute;
+    inset: 55px 0 0 0;
+    z-index: 7; /* Keep interactive workflow above CRT overlays and scan effects. */
+    overflow-y: auto;
+    padding: 28px 22px 40px;
+    background: rgba(3, 8, 3, 0.97);
+    color: #aaffaa;
+}
+.workflow-shell { max-width: 1050px; margin: 0 auto; }
+.dashboard-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; margin-top:18px; }
+.dashboard-button { min-height:105px; padding:16px; text-align:left; border:1px solid #477a47; background:#0b160b; color:#baffba; }
+.dashboard-button strong { display:block; font-family:"Rajdhani",sans-serif; font-size:19px; letter-spacing:1px; margin-bottom:8px; }
+.dashboard-button span { display:block; color:#82b582; font:12px/1.5 "Share Tech Mono",monospace; }
+.dashboard-button:hover { border-color:#baffba; background:#172a17; }
+
+.workflow-kicker {
+    color: #72b872; font-size: 12px; letter-spacing: 2px;
+    border-bottom: 1px solid #31563a; padding-bottom: 10px; margin-bottom: 24px;
+}
+.workflow-title {
+    font-family: "Orbitron", "Rajdhani", sans-serif; font-size: clamp(21px, 3vw, 30px);
+    text-align: center; color: #d0ffd0; letter-spacing: 2px; margin: 8px 0;
+}
+.workflow-subtitle { text-align: center; color: #83bd83; margin: 0 0 28px; }
+.workflow-section {
+    border: 1px solid #31563a; background: rgba(13, 25, 13, .72);
+    padding: 20px; margin: 18px 0; box-shadow: inset 0 0 22px rgba(70,255,70,.035);
+}
+.workflow-section h2 {
+    font-family: "Rajdhani", sans-serif; font-size: 22px; letter-spacing: 1.5px;
+    margin: 0 0 14px; color: #c5ffc5;
+}
+.workflow-section h3 { font-family: "Rajdhani", sans-serif; color: #baffba; margin: 0 0 8px; }
+.workflow-muted { color: #78a878; font-size: 13px; line-height: 1.6; }
+.slot-grid { display: grid; grid-template-columns: repeat(5, minmax(0,1fr)); gap: 12px; }
+.slot-button {
+    min-height: 82px; border: 1px solid #477a47; background: #0b160b; color: #aaffaa;
+    padding: 12px; text-align: left; cursor: pointer; font-family: "Rajdhani", sans-serif;
+}
+.slot-button strong { display:block; font-size: 18px; letter-spacing: 1px; }
+.slot-button span { display:block; color:#79a979; font-family:"Share Tech Mono",monospace; font-size:11px; margin-top:5px; }
+.slot-button.selected { border-color:#baffba; background:#1a351d; box-shadow:0 0 13px rgba(100,255,100,.2); }
+.workflow-fields { display:grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap:14px; }
+.workflow-field { display:flex; flex-direction:column; gap:6px; min-width:0; }
+.workflow-field.full { grid-column:1/-1; }
+.workflow-field label { color:#8fc98f; font-size:12px; letter-spacing:1px; }
+.workflow-field input, .workflow-field select, .workflow-field textarea {
+    width:100%; border:1px solid #315f37; border-radius:0; background:#050b05; color:#caffca;
+    padding:11px; font:14px "Share Tech Mono",monospace; outline:none;
+}
+.workflow-field input:focus, .workflow-field select:focus, .workflow-field textarea:focus { border-color:#9cff9c; box-shadow:0 0 8px rgba(100,255,100,.18); }
+.workflow-field input[readonly] { color:#8cff8c; background:#0b120b; }
+.workflow-field textarea { min-height:78px; resize:vertical; }
+.workflow-actions { display:flex; flex-wrap:wrap; gap:10px; margin-top:18px; }
+.workflow-actions button, .unit-card button { border:1px solid #477a47; background:#101c10; color:#baffba; padding:10px 15px; cursor:pointer; font:700 14px "Rajdhani",sans-serif; letter-spacing:1px; }
+.workflow-actions button.primary { background:#1c3b20; border-color:#83bd83; }
+.workflow-actions button:disabled { opacity:.4; cursor:not-allowed; }
+.workflow-status { min-height:18px; color:#8cff8c; font-size:12px; margin-top:10px; }
+.unit-list { display:grid; gap:10px; margin-top:15px; }
+.unit-card { border:1px solid #31563a; background:rgba(5,12,5,.8); padding:13px; }
+.unit-card-top { display:flex; justify-content:space-between; align-items:flex-start; gap:12px; }
+.unit-card h3 { margin:0; font-size:18px; }
+.unit-card p { margin:7px 0 0; color:#8eb88e; font-size:12px; line-height:1.5; white-space:pre-wrap; }
+.unit-card-actions { display:flex; gap:7px; flex-shrink:0; }
+.unit-card button { padding:6px 9px; font-size:12px; }
+.unit-count { color:#aaffaa; font-size:13px; }
+.workflow-divider { border:0; border-top:1px solid #31563a; margin:20px 0; }
+@media(max-width:700px) {
+    .monitor { padding:6px; }
+    .workflow-panel { padding:18px 12px 30px; }
+    .slot-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .workflow-fields { grid-template-columns:1fr; }
+    .dashboard-grid { grid-template-columns:1fr; }
+    .workflow-field.full { grid-column:auto; }
+    .workflow-section { padding:14px; }
+}
+
 </style>
 </head>
 
@@ -550,7 +633,7 @@ input[type="range"] {
 
         <!-- BOOT SEQUENCE -->
 
-        <div class="boot" id="boot">
+        <div class="boot hidden" id="boot">
 
             <div>
                 <h2>F.R.E.E.D.O.M.</h2>
@@ -579,7 +662,7 @@ input[type="range"] {
 
         <!-- DOCUMENT VIEWPORT -->
 
-        <div class="viewport" id="viewport">
+        <div class="viewport" id="viewport" style="display:none;">
 
             <div class="document" id="document">
 
@@ -741,6 +824,149 @@ input[type="range"] {
 
         </div>
 
+
+        <!-- PERSONNEL REGISTRATION AND FORCE BUILDER -->
+        <div class="workflow-panel" id="workflowPanel">
+            <div class="workflow-shell">
+                <div class="workflow-kicker">F.R.E.E.D.O.M. // FRONTIER COMMAND NETWORK // PERSONNEL ADMINISTRATION</div>
+
+                <section id="personnelScreen">
+                    <h1 class="workflow-title">PERSONNEL REGISTRATION</h1>
+                    <p class="workflow-subtitle">VEYRA // OPERATION HOMESTEAD</p>
+                    <div class="workflow-section">
+                        <h2>01 // IDENTIFY PERSONNEL</h2>
+                        <p class="workflow-muted">Select your assigned personnel slot. The terminal will populate the identification fields automatically. These are game identifiers only; no password verification is performed.</p>
+                        <div class="slot-grid" id="slotGrid"></div>
+                        <hr class="workflow-divider">
+                        <div class="workflow-fields">
+                            <div class="workflow-field">
+                                <label for="personnelName">PERSONNEL IDENTIFICATION</label>
+                                <input id="personnelName" type="text" readonly placeholder="SELECT PERSONNEL SLOT">
+                            </div>
+                            <div class="workflow-field">
+                                <label for="personnelCode">ACCESS CODE</label>
+                                <input id="personnelCode" type="text" readonly placeholder="AWAITING SLOT SELECTION">
+                            </div>
+                        </div>
+                        <div class="workflow-actions">
+                            <button class="primary" id="authenticateButton" type="button" onclick="enterForceBuilder()" disabled>CONFIRM PERSONNEL IDENTITY</button>
+                        </div>
+                        <div class="workflow-status" id="personnelStatus" aria-live="polite"></div>
+                    </div>
+                </section>
+
+                <section id="dashboardScreen" class="hidden">
+                    <h1 class="workflow-title">FRONTIER COMMAND NETWORK</h1>
+                    <p class="workflow-subtitle">MAIN OPERATIONS // <span id="dashboardPersonnelLabel">PERSONNEL NOT IDENTIFIED</span></p>
+                    <div class="workflow-section">
+                        <h2>AVAILABLE OPERATIONS</h2>
+                        <p class="workflow-muted">Select an operational file. You may return to this command screen at any time without replaying the incoming transmission.</p>
+                        <div class="dashboard-grid">
+                            <button class="dashboard-button" type="button" onclick="openTransmission()"><strong>01 // INCOMING TRANSMISSION</strong><span>Review the Veyra liberation contract and mission briefing.</span></button>
+                            <button class="dashboard-button" type="button" onclick="openForceBuilder()"><strong>02 // FORCE REGISTRATION</strong><span>Create, review or amend your assigned mercenary force.</span></button>
+                            <button class="dashboard-button" type="button" onclick="openCompanyRoster()"><strong>03 // COMPANY MUSTER</strong><span>Review the registered forces of all personnel slots.</span></button>
+                            <button class="dashboard-button" type="button" onclick="openDeploymentMap()"><strong>04 // PLANETARY DEPLOYMENT</strong><span>Inspect Veyra and review the available landing zones.</span></button>
+                        </div>
+                        <div class="workflow-status" id="dashboardStatus">COMMAND NETWORK READY // SELECT AN OPERATION.</div>
+                    </div>
+                    <div class="workflow-actions"><button type="button" onclick="changePersonnel()">CHANGE PERSONNEL IDENTITY</button></div>
+                </section>
+
+                <section id="rosterScreen" class="hidden">
+                    <h1 class="workflow-title">COMPANY MUSTER</h1>
+                    <p class="workflow-subtitle">REGISTERED FORCE RECORDS // LOCAL PREVIEW</p>
+                    <div class="workflow-section"><div id="companyRosterContent"></div></div>
+                    <div class="workflow-actions"><button type="button" onclick="showDashboard()">RETURN TO COMMAND</button></div>
+                </section>
+
+                <section id="mapPlaceholderScreen" class="hidden">
+                    <h1 class="workflow-title">PLANETARY DEPLOYMENT</h1>
+                    <p class="workflow-subtitle">VEYRA // OPERATION HOMESTEAD</p>
+                    <div class="workflow-section"><h2>PLANETARY SURVEY FILE</h2><p class="workflow-muted">The Veyra deployment map and landing-zone intelligence panel will be installed in this section in the next stage.</p><p class="workflow-muted">AVAILABLE LANDING ZONES: A // B // C // D // E</p></div>
+                    <div class="workflow-actions"><button type="button" onclick="showDashboard()">RETURN TO COMMAND</button></div>
+                </section>
+
+                <section id="forceScreen" class="hidden">
+                    <h1 class="workflow-title">FORCE REGISTRATION</h1>
+                    <p class="workflow-subtitle">COMPANY MUSTER // INDIVIDUAL FORMATION RECORD</p>
+                    <div class="workflow-section">
+                        <div class="unit-card-top">
+                            <div>
+                                <h2>02 // COMMANDER PROFILE</h2>
+                                <div class="workflow-muted" id="activePersonnelLabel">PERSONNEL SLOT NOT SELECTED</div>
+                            </div>
+                            <div class="unit-count" id="unitCount">0 / 5 UNITS REGISTERED</div>
+                        </div>
+                        <p class="workflow-muted">Register the formations or assets under your command. A unit represents an independently commanded formation or asset. You may register up to five units in this force.</p>
+                    </div>
+
+                    <div class="workflow-section">
+                        <h2>03 // ADD FORMATION / ASSET</h2>
+                        <div class="workflow-fields">
+                            <div class="workflow-field">
+                                <label for="unitName">FORMATION DESIGNATION</label>
+                                <input id="unitName" type="text" maxlength="50" placeholder="e.g. 1st Vanguard Company">
+                            </div>
+                            <div class="workflow-field">
+                                <label for="unitType">FORMATION CLASSIFICATION</label>
+                                <select id="unitType">
+                                    <option value="Infantry">INFANTRY</option>
+                                    <option value="Mechanised Infantry">MECHANISED INFANTRY</option>
+                                    <option value="Armour">ARMOURED</option>
+                                    <option value="Reconnaissance / Special Operations">RECONNAISSANCE / SPECIAL OPERATIONS</option>
+                                    <option value="Aircraft / Gunships">AIRCRAFT / GUNSHIPS</option>
+                                    <option value="Spacecraft">SPACECRAFT</option>
+                                    <option value="Logistics / Support">LOGISTICS / SUPPORT</option>
+                                    <option value="Other">OTHER</option>
+                                </select>
+                            </div>
+                            <div class="workflow-field full">
+                                <label for="unitComposition">UNIT COMPOSITION / STRENGTH</label>
+                                <textarea id="unitComposition" placeholder="Describe the squads, vehicles, personnel or assets included in this formation."></textarea>
+                            </div>
+                            <div class="workflow-field full">
+                                <label for="unitEquipment">EQUIPMENT / LOADOUT</label>
+                                <textarea id="unitEquipment" placeholder="List notable weapons, equipment, vehicles or upgrades."></textarea>
+                            </div>
+                            <div class="workflow-field">
+                                <label for="unitRP">REQUISITION COST (IF APPLICABLE)</label>
+                                <input id="unitRP" type="number" min="0" step="1" placeholder="Leave blank if not yet determined">
+                            </div>
+                            <div class="workflow-field">
+                                <label for="unitRole">PRIMARY ROLE (OPTIONAL)</label>
+                                <input id="unitRole" type="text" maxlength="60" placeholder="e.g. Assault, defence, reconnaissance">
+                            </div>
+                            <div class="workflow-field full">
+                                <label for="unitNotes">COMMAND NOTES (OPTIONAL)</label>
+                                <textarea id="unitNotes" placeholder="Additional information for the company commander."></textarea>
+                            </div>
+                        </div>
+                        <div class="workflow-actions">
+                            <button class="primary" id="addUnitButton" type="button" onclick="addOrUpdateUnit()">ADD UNIT TO FORCE</button>
+                            <button type="button" onclick="clearUnitForm()">CLEAR FORM</button>
+                        </div>
+                        <div class="workflow-status" id="forceStatus" aria-live="polite"></div>
+                    </div>
+
+                    <div class="workflow-section">
+                        <div class="unit-card-top">
+                            <h2>04 // REGISTERED FORCE</h2>
+                            <span class="unit-count" id="unitCountBottom">0 / 5</span>
+                        </div>
+                        <div class="unit-list" id="unitList">
+                            <p class="workflow-muted">NO FORMATIONS REGISTERED. Add your first unit above.</p>
+                        </div>
+                        <div class="workflow-actions">
+                            <button class="primary" type="button" onclick="saveForceDraft()">SAVE FORCE RECORD</button>
+                            <button type="button" onclick="showDashboard()">RETURN TO COMMAND</button>
+                        </div>
+                        <div class="workflow-status" id="saveStatus" aria-live="polite">Changes are saved in this browser as you work.</div>
+                    </div>
+                    <p class="workflow-muted">REGISTRATION STATUS: DRAFT // COMPANY-WIDE SHARING WILL BE ENABLED WHEN THE SHARED DATABASE IS CONNECTED.</p>
+                </section>
+            </div>
+        </div>
+
     </div>
 
     <!-- CONTROL PANEL -->
@@ -753,6 +979,10 @@ input[type="range"] {
 
         <button onclick="restartScroll()">
             RESTART
+        </button>
+
+        <button id="returnToCommandButton" onclick="returnToCommandNetwork()" style="display:none">
+            RETURN TO COMMAND NETWORK
         </button>
 
         <label>
@@ -795,6 +1025,7 @@ let typingNodeIndex = 0;
 let typingCharIndex = 0;
 let isTyping = false;
 let isPaused = false;
+let introTypingSlow = true;
 let glitchTimeout = null;
 
 /* Prepare the existing contract for a character-by-character reveal.
@@ -807,6 +1038,7 @@ function prepareTypewriter() {
     typingNodes = [];
     typingNodeIndex = 0;
     typingCharIndex = 0;
+    introTypingSlow = true;
 
     const walker = document.createTreeWalker(
         documentPanel,
@@ -816,7 +1048,10 @@ function prepareTypewriter() {
     let node;
     while ((node = walker.nextNode())) {
         const originalText = node.nodeValue;
-        if (originalText.length > 0) {
+        /* Ignore indentation/newline-only nodes between HTML elements.
+           Typing those invisible spaces can make the layout check trigger
+           against the entire document instead of the text currently appearing. */
+        if (originalText.trim().length > 0) {
             typingNodes.push({ node: node, text: originalText });
             node.nodeValue = "";
         }
@@ -834,7 +1069,7 @@ function typeNextCharacter() {
 
     let charactersThisPass = 0;
 
-    while (typingNodeIndex < typingNodes.length && charactersThisPass < 4) {
+    while (typingNodeIndex < typingNodes.length && charactersThisPass < 3) {
         const current = typingNodes[typingNodeIndex];
 
         if (typingCharIndex < current.text.length) {
@@ -842,15 +1077,31 @@ function typeNextCharacter() {
             typingCharIndex++;
             charactersThisPass++;
         } else {
+            /* Return to the normal typing pace once the Situation Report heading
+               has appeared in full. The contract title and details above it
+               therefore type more slowly, through the reward line. */
+            if (current.text.includes("01 // SITUATION REPORT")) {
+                introTypingSlow = false;
+            }
             typingNodeIndex++;
             typingCharIndex = 0;
         }
     }
 
-    /* Check the layout periodically rather than after every character. */
-    if (typingNodes.length > 0 && viewport.scrollHeight >= viewport.clientHeight - 12) {
-        finishTypingAndScroll();
-        return;
+    /*
+       Check the position of the text currently being typed.
+       scrollHeight is unreliable here because empty headings, paragraphs
+       and table cells still occupy layout space before their text appears.
+    */
+    const currentEntry = typingNodes[typingNodeIndex];
+    if (currentEntry && currentEntry.node.parentElement) {
+        const viewportRect = viewport.getBoundingClientRect();
+        const textBlockRect = currentEntry.node.parentElement.getBoundingClientRect();
+
+        if (textBlockRect.bottom >= viewportRect.bottom - 18) {
+            finishTypingAndScroll();
+            return;
+        }
     }
 
     if (typingNodeIndex >= typingNodes.length) {
@@ -858,26 +1109,29 @@ function typeNextCharacter() {
         return;
     }
 
-    typingTimer = setTimeout(typeNextCharacter, 22);
+    typingTimer = setTimeout(typeNextCharacter, introTypingSlow ? 85 : 32);
 }
 
 /* Finish displaying the full document, then switch to ordinary scrolling. */
 function finishTypingAndScroll() {
     clearTimeout(typingTimer);
+    clearInterval(scrollTimer);
 
-    for (let i = typingNodeIndex; i < typingNodes.length; i++) {
-        const entry = typingNodes[i];
-        if (i === typingNodeIndex) {
-            entry.node.nodeValue = entry.text.substring(0, typingCharIndex) +
-                entry.text.substring(typingCharIndex);
-        } else {
-            entry.node.nodeValue = entry.text;
-        }
-    }
+    /* Restore EVERY saved text node, not just the node at the current index.
+       This guarantees that the complete contract is present before scrolling
+       begins, even if the screen-fill check fires halfway through a line. */
+    typingNodes.forEach(function(entry) {
+        entry.node.nodeValue = entry.text;
+    });
 
     isTyping = false;
+    scrolling = false;
     typingNodes = [];
+    typingNodeIndex = 0;
+    typingCharIndex = 0;
 
+    /* Always begin the archive at the top of the now-complete contract. */
+    viewport.scrollTop = 0;
     statusText.textContent = "TRANSMISSION ACTIVE";
     pauseButton.textContent = "PAUSE";
 
@@ -918,6 +1172,7 @@ function beginScrolling() {
             scrolling = false;
             statusText.textContent = "TRANSMISSION COMPLETE";
             pauseButton.textContent = "REPLAY";
+            document.getElementById("returnToCommandButton").style.display = "inline-block";
         }
     }, 50);
 }
@@ -998,10 +1253,348 @@ function scheduleGlitch() {
 
         setTimeout(function() {
             screen.classList.remove("glitch-burst");
-            scheduleGlitch();
         }, 180 + Math.random() * 260);
+
+        scheduleGlitch();
     }, delay);
 }
+
+/* =================================
+   9. PERSONNEL REGISTRATION / FORCE BUILDER
+   Drafts are local to this browser for now. Shared database integration
+   will be added separately so players on different computers can sync.
+================================= */
+/* =========================================================
+   PERSONNEL SLOT CONFIGURATION — EDIT THESE FIVE RECORDS
+   Change playerName to the actual player's name.
+   personnelId may be left blank to use playerName automatically.
+   accessCode is displayed as stars only; it is not a real password.
+========================================================= */
+const PERSONNEL_SLOTS = [
+    { playerName: "Lt. Col. Will", personnelId: "", accessCode: "********" },
+    { playerName: "Lt. Col. Mitchel", personnelId: "", accessCode: "********" },
+    { playerName: "Lt. Col. Ben", personnelId: "", accessCode: "********" },
+    { playerName: "Lt. Col. Mark", personnelId: "", accessCode: "********" },
+    { playerName: "Lt. Col. Kevin", personnelId: "", accessCode: "********" }
+];
+
+function renderPersonnelSlots() {
+    const grid = document.getElementById("slotGrid");
+    grid.innerHTML = "";
+    PERSONNEL_SLOTS.forEach(function(person, index) {
+        const slot = index + 1;
+        const button = document.createElement("button");
+        button.className = "slot-button";
+        button.type = "button";
+        button.dataset.slot = String(slot);
+        button.onclick = function() { selectPersonnel(slot); };
+        const title = document.createElement("strong");
+        title.textContent = person.playerName || ("PERSONNEL " + String(slot).padStart(2, "0"));
+        const subtitle = document.createElement("span");
+        subtitle.textContent = "ASSIGNED COMMANDER";
+        button.appendChild(title);
+        button.appendChild(subtitle);
+        grid.appendChild(button);
+    });
+}
+
+const workflowPanel = document.getElementById("workflowPanel");
+const personnelScreen = document.getElementById("personnelScreen");
+const forceScreen = document.getElementById("forceScreen");
+const dashboardScreen = document.getElementById("dashboardScreen");
+const rosterScreen = document.getElementById("rosterScreen");
+const mapPlaceholderScreen = document.getElementById("mapPlaceholderScreen");
+const personnelNameField = document.getElementById("personnelName");
+const personnelCodeField = document.getElementById("personnelCode");
+const authenticateButton = document.getElementById("authenticateButton");
+const unitListElement = document.getElementById("unitList");
+const forceStorageKey = "freedomForceDrafts_v1";
+let selectedPersonnelSlot = null;
+let currentPersonnelSlot = null;
+let currentUnits = [];
+let editingUnitIndex = -1;
+let credentialTypingTimer = null;
+
+function readForceDrafts() {
+    try { return JSON.parse(localStorage.getItem(forceStorageKey) || "{}"); }
+    catch (error) { return {}; }
+}
+function writeForceDrafts(drafts) {
+    try {
+        localStorage.setItem(forceStorageKey, JSON.stringify(drafts));
+        return true;
+    } catch (error) {
+        const status = document.getElementById("saveStatus");
+        if (status) status.textContent = "LOCAL SAVE FAILED — browser storage may be unavailable.";
+        return false;
+    }
+}
+function hideWorkflowScreens() {
+    [personnelScreen, dashboardScreen, forceScreen, rosterScreen, mapPlaceholderScreen].forEach(function(section) {
+        if (section) section.classList.add("hidden");
+    });
+}
+function showDashboard() {
+    viewport.style.display = "none";
+    document.querySelector(".controls").style.display = "none";
+    workflowPanel.classList.remove("hidden");
+    hideWorkflowScreens();
+    dashboardScreen.classList.remove("hidden");
+    workflowPanel.scrollTop = 0;
+    statusText.textContent = "COMMAND NETWORK // READY";
+}
+function returnToCommandNetwork() {
+    clearInterval(scrollTimer);
+    scrolling = false;
+    isPaused = false;
+    document.getElementById("returnToCommandButton").style.display = "none";
+    showDashboard();
+}
+function showWorkflowAfterTransmission() {
+    viewport.style.display = "none";
+    document.querySelector(".controls").style.display = "none";
+    workflowPanel.classList.remove("hidden");
+    hideWorkflowScreens();
+    dashboardScreen.classList.remove("hidden");
+    workflowPanel.scrollTop = 0;
+    statusText.textContent = "COMMAND NETWORK // READY";
+}
+function openTransmission() {
+    document.getElementById("returnToCommandButton").style.display = "none";
+    hideWorkflowScreens();
+    workflowPanel.classList.add("hidden");
+    viewport.style.display = "block";
+    viewport.scrollTop = 0;
+    document.querySelector(".controls").style.display = "flex";
+    statusText.textContent = "TRANSMISSION ARCHIVE";
+    pauseButton.textContent = "REPLAY";
+    isPaused = false;
+    scrolling = false;
+    clearInterval(scrollTimer);
+    prepareTypewriter();
+    typeNextCharacter();
+}
+function selectPersonnel(slot) {
+    selectedPersonnelSlot = slot;
+    document.querySelectorAll(".slot-button").forEach(function(button) {
+        button.classList.toggle("selected", Number(button.dataset.slot) === slot);
+    });
+
+    clearInterval(credentialTypingTimer);
+    const person = PERSONNEL_SLOTS[slot - 1];
+    const suffix = String(slot).padStart(2, "0");
+    const name = (person.personnelId || person.playerName || ("PERSONNEL " + suffix)).toUpperCase();
+    const code = person.accessCode || "********";
+
+    personnelNameField.value = "";
+    personnelCodeField.value = "";
+    authenticateButton.disabled = true;
+    document.getElementById("personnelStatus").textContent = "LOADING PERSONNEL RECORD...";
+
+    let index = 0;
+    credentialTypingTimer = setInterval(function() {
+        if (index < name.length) {
+            personnelNameField.value += name.charAt(index);
+        } else if (index > name.length) {
+            personnelCodeField.value += code.charAt(index - name.length - 1);
+        }
+        index++;
+        if (index > name.length + code.length + 1) {
+            clearInterval(credentialTypingTimer);
+            authenticateButton.disabled = false;
+            document.getElementById("personnelStatus").textContent =
+                "PERSONNEL RECORD LOADED. CONFIRM TO ACCESS COMMAND NETWORK.";
+        }
+    }, 65);
+}
+function enterForceBuilder() {
+    if (!selectedPersonnelSlot) return;
+    currentPersonnelSlot = selectedPersonnelSlot;
+    const drafts = readForceDrafts();
+    const draft = drafts[currentPersonnelSlot] || {};
+    currentUnits = Array.isArray(draft.units) ? draft.units : [];
+    const configuredName = PERSONNEL_SLOTS[currentPersonnelSlot - 1].playerName ||
+        ("Commander " + currentPersonnelSlot);
+    drafts[currentPersonnelSlot] = { callsign: configuredName, units: currentUnits };
+    writeForceDrafts(drafts);
+
+    document.getElementById("dashboardPersonnelLabel").textContent =
+        personnelNameField.value + " // " + configuredName.toUpperCase();
+    showDashboard();
+}
+function openForceBuilder() {
+    if (!currentPersonnelSlot) return;
+    const drafts = readForceDrafts();
+    const draft = drafts[currentPersonnelSlot] || {};
+    currentUnits = Array.isArray(draft.units) ? draft.units : [];
+    document.getElementById("activePersonnelLabel").textContent =
+        "COMMANDER-0" + currentPersonnelSlot + " // " + (draft.callsign || ("COMMANDER " + currentPersonnelSlot));
+    hideWorkflowScreens();
+    dashboardScreen.classList.add("hidden");
+    forceScreen.classList.remove("hidden");
+    workflowPanel.scrollTop = 0;
+    renderUnits();
+    statusText.textContent = "FORCE REGISTRATION // SLOT 0" + currentPersonnelSlot;
+}
+function openCompanyRoster() {
+    const drafts = readForceDrafts();
+    const target = document.getElementById("companyRosterContent");
+    target.textContent = "";
+    for (let slot = 1; slot <= PERSONNEL_SLOTS.length; slot++) {
+        const record = drafts[slot] || {};
+        const block = document.createElement("div");
+        block.className = "unit-card";
+        const heading = document.createElement("h3");
+        heading.textContent = PERSONNEL_SLOTS[slot - 1].playerName + " // " + (record.callsign || "UNREGISTERED");
+        block.appendChild(heading);
+        const units = Array.isArray(record.units) ? record.units : [];
+        const summary = document.createElement("p");
+        summary.textContent = units.length ? units.length + " FORMATION(S) REGISTERED" : "NO FORCE RECORD SUBMITTED";
+        block.appendChild(summary);
+        units.forEach(function(unit, i) {
+            const detail = document.createElement("p");
+            detail.textContent = String(i + 1).padStart(2, "0") + " // " + unit.name + " — " + unit.type + (unit.composition ? " // " + unit.composition : "");
+            block.appendChild(detail);
+        });
+        target.appendChild(block);
+    }
+    hideWorkflowScreens();
+    rosterScreen.classList.remove("hidden");
+    workflowPanel.scrollTop = 0;
+    statusText.textContent = "COMPANY MUSTER // LOCAL PREVIEW";
+}
+function openDeploymentMap() {
+    hideWorkflowScreens();
+    mapPlaceholderScreen.classList.remove("hidden");
+    workflowPanel.scrollTop = 0;
+    statusText.textContent = "PLANETARY DEPLOYMENT // SURVEY FILE";
+}
+function changePersonnel() {
+    currentPersonnelSlot = null;
+    selectedPersonnelSlot = null;
+    personnelNameField.value = "";
+    personnelCodeField.value = "";
+    authenticateButton.disabled = true;
+    hideWorkflowScreens();
+    personnelScreen.classList.remove("hidden");
+    workflowPanel.scrollTop = 0;
+    statusText.textContent = "PERSONNEL REGISTRATION";
+}
+function getUnitFormData() {
+    const rpText = document.getElementById("unitRP").value.trim();
+    return {
+        name: document.getElementById("unitName").value.trim(),
+        type: document.getElementById("unitType").value,
+        composition: document.getElementById("unitComposition").value.trim(),
+        equipment: document.getElementById("unitEquipment").value.trim(),
+        rp: rpText === "" ? "" : Number(rpText),
+        role: document.getElementById("unitRole").value.trim(),
+        notes: document.getElementById("unitNotes").value.trim()
+    };
+}
+function addOrUpdateUnit() {
+    const unit = getUnitFormData();
+    const status = document.getElementById("forceStatus");
+    if (!unit.name) { status.textContent = "ERROR: ENTER A FORMATION DESIGNATION."; return; }
+    if (editingUnitIndex === -1 && currentUnits.length >= 5) {
+        status.textContent = "REGISTRATION LIMIT REACHED: MAXIMUM FIVE UNITS PER PERSONNEL SLOT."; return;
+    }
+    const wasEditing = editingUnitIndex >= 0;
+    if (wasEditing) currentUnits[editingUnitIndex] = unit;
+    else currentUnits.push(unit);
+    clearUnitForm();
+    renderUnits();
+    saveForceDraft();
+    status.textContent = "FORMATION RECORD " + (wasEditing ? "UPDATED" : "ADDED") + ".";
+}
+function clearUnitForm() {
+    ["unitName", "unitComposition", "unitEquipment", "unitRP", "unitRole", "unitNotes"].forEach(function(id) {
+        document.getElementById(id).value = "";
+    });
+    document.getElementById("unitType").selectedIndex = 0;
+    editingUnitIndex = -1;
+    document.getElementById("addUnitButton").textContent = "ADD UNIT TO FORCE";
+}
+function editUnit(index) {
+    const unit = currentUnits[index];
+    if (!unit) return;
+    document.getElementById("unitName").value = unit.name || "";
+    document.getElementById("unitType").value = unit.type || "Infantry";
+    document.getElementById("unitComposition").value = unit.composition || "";
+    document.getElementById("unitEquipment").value = unit.equipment || "";
+    document.getElementById("unitRP").value = unit.rp;
+    document.getElementById("unitRole").value = unit.role || "";
+    document.getElementById("unitNotes").value = unit.notes || "";
+    editingUnitIndex = index;
+    document.getElementById("addUnitButton").textContent = "UPDATE UNIT RECORD";
+    document.getElementById("unitName").focus();
+    workflowPanel.scrollTo({ top: document.getElementById("unitName").getBoundingClientRect().top + workflowPanel.scrollTop - 80, behavior: "smooth" });
+}
+function removeUnit(index) {
+    if (!confirm("Remove this formation from your draft force?")) return;
+    currentUnits.splice(index, 1);
+    renderUnits();
+    saveForceDraft();
+    document.getElementById("forceStatus").textContent = "FORMATION REMOVED FROM DRAFT.";
+}
+function renderUnits() {
+    unitListElement.textContent = "";
+    document.getElementById("unitCount").textContent = currentUnits.length + " / 5 UNITS REGISTERED";
+    document.getElementById("unitCountBottom").textContent = currentUnits.length + " / 5";
+    document.getElementById("addUnitButton").disabled = currentUnits.length >= 5 && editingUnitIndex === -1;
+    if (currentUnits.length === 0) {
+        const empty = document.createElement("p");
+        empty.className = "workflow-muted";
+        empty.textContent = "NO FORMATIONS REGISTERED. Add your first unit above.";
+        unitListElement.appendChild(empty);
+        return;
+    }
+    currentUnits.forEach(function(unit, index) {
+        const card = document.createElement("div"); card.className = "unit-card";
+        const top = document.createElement("div"); top.className = "unit-card-top";
+        const heading = document.createElement("div");
+        const title = document.createElement("h3"); title.textContent = String(index + 1).padStart(2,"0") + " // " + unit.name;
+        const kind = document.createElement("div"); kind.className = "workflow-muted"; kind.textContent = unit.type + (unit.role ? " // " + unit.role : "");
+        heading.append(title, kind); top.appendChild(heading);
+        const actions = document.createElement("div"); actions.className = "unit-card-actions";
+        const edit = document.createElement("button"); edit.type="button"; edit.textContent="EDIT"; edit.onclick=function(){editUnit(index);};
+        const remove = document.createElement("button"); remove.type="button"; remove.textContent="REMOVE"; remove.onclick=function(){removeUnit(index);};
+        actions.append(edit, remove); top.appendChild(actions); card.appendChild(top);
+        [unit.composition ? "COMPOSITION: " + unit.composition : "", unit.equipment ? "EQUIPMENT: " + unit.equipment : "", unit.rp !== "" && unit.rp !== null && unit.rp !== undefined ? "REQUISITION COST: " + unit.rp + " RP" : "", unit.notes ? "NOTES: " + unit.notes : ""].filter(Boolean).forEach(function(line) {
+            const detail = document.createElement("p"); detail.textContent = line; card.appendChild(detail);
+        });
+        unitListElement.appendChild(card);
+    });
+}
+function saveForceDraft() {
+    if (!currentPersonnelSlot) return;
+    const drafts = readForceDrafts();
+    drafts[currentPersonnelSlot] = {
+        callsign: PERSONNEL_SLOTS[currentPersonnelSlot - 1].playerName || ("Commander " + currentPersonnelSlot),
+        units: currentUnits
+    };
+    const saved = writeForceDrafts(drafts);
+    document.getElementById("saveStatus").textContent = saved ? "DRAFT SAVED LOCALLY IN THIS BROWSER. SHARED SYNC NOT YET CONNECTED." : "LOCAL SAVE FAILED.";
+}
+function returnToPersonnel() {
+    saveForceDraft();
+    forceScreen.classList.add("hidden");
+    personnelScreen.classList.remove("hidden");
+    selectedPersonnelSlot = currentPersonnelSlot;
+    selectPersonnel(currentPersonnelSlot);
+    statusText.textContent = "PERSONNEL REGISTRATION";
+    workflowPanel.scrollTop = 0;
+}
+
+
+// Initial state: personnel selection is the terminal's landing screen.
+renderPersonnelSlots();
+viewport.style.display = "none";
+document.querySelector(".controls").style.display = "none";
+workflowPanel.classList.remove("hidden");
+hideWorkflowScreens();
+personnelScreen.classList.remove("hidden");
+statusText.textContent = "PERSONNEL REGISTRATION";
 
 scheduleGlitch();
 </script>
