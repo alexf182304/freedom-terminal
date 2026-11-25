@@ -611,6 +611,43 @@ input[type="range"] {
 .unit-card button { padding:6px 9px; font-size:12px; }
 .unit-count { color:#aaffaa; font-size:13px; }
 .workflow-divider { border:0; border-top:1px solid #31563a; margin:20px 0; }
+
+/* Catalogue-driven force registration */
+.force-budget { display:flex; justify-content:space-between; flex-wrap:wrap; gap:12px; padding:13px; border:1px solid #477a47; background:#081208; margin:12px 0; }
+.force-budget strong { color:#d0ffd0; font-family:"Rajdhani",sans-serif; font-size:20px; }
+.catalogue-layout { display:grid; grid-template-columns:minmax(0,1fr) minmax(0,1fr); gap:14px; }
+.catalogue-list { display:grid; align-content:start; gap:8px; max-height:620px; overflow:auto; padding-right:4px; }
+.catalogue-category-heading { position:sticky; top:0; z-index:2; padding:9px 11px; margin-top:8px; border:1px solid #315f37; background:#102010; color:#baffba; font:700 15px "Rajdhani",sans-serif; letter-spacing:1.5px; }
+.catalogue-category-heading:first-child { margin-top:0; }
+.catalogue-category-heading small { float:right; color:#80ad80; font:12px "Share Tech Mono",monospace; letter-spacing:0; }
+.catalogue-empty { color:#8eb88e; padding:12px; border:1px dashed #315f37; }
+.catalogue-unit { width:100%; display:flex; justify-content:space-between; gap:12px; text-align:left; padding:12px; border:1px solid #315f37; background:#071007; color:#baffba; cursor:pointer; font-family:"Share Tech Mono",monospace; }
+.catalogue-unit.selected,.catalogue-unit:hover { border-color:#baffba; background:#142514; }
+.catalogue-unit small { display:block; color:#80ad80; margin-top:5px; }
+.unit-detail { border:1px solid #315f37; background:#050b05; padding:15px; min-height:220px; }
+.unit-detail h3 { color:#d0ffd0; font-family:"Rajdhani",sans-serif; font-size:22px; margin:0 0 6px; }
+.unit-detail pre { white-space:pre-wrap; overflow-wrap:anywhere; color:#a9dba9; font:13px/1.6 "Share Tech Mono",monospace; margin:12px 0; }
+.unit-description { color:#a9dba9; font:13px/1.6 "Share Tech Mono",monospace; margin-top:12px; overflow-x:auto; }
+.unit-description p { margin:7px 0; white-space:pre-wrap; }
+.unit-description table { width:100%; border-collapse:collapse; margin:9px 0 14px; font-size:12px; table-layout:auto; }
+.unit-description th { white-space:nowrap; }
+.unit-description td { vertical-align:top; }
+.unit-description .description-heading { margin:15px 0 7px; padding-bottom:5px; border-bottom:1px solid #315f37; color:#d0ffd0; font:700 15px "Rajdhani",sans-serif; letter-spacing:1.3px; }
+.unit-description .description-heading:first-child { margin-top:0; }
+.unit-description th,.unit-description td { border:1px solid #315f37; padding:6px 8px; text-align:left; }
+.unit-description th { color:#d0ffd0; background:#102010; }
+.unit-description strong { color:#d0ffd0; }
+.quantity-row { display:flex; align-items:center; gap:10px; margin-top:14px; flex-wrap:wrap; }
+.quantity-row input { width:90px; border:1px solid #477a47; background:#050b05; color:#caffca; padding:10px; font:15px "Share Tech Mono",monospace; }
+.force-line { display:flex; justify-content:space-between; gap:12px; align-items:center; flex-wrap:wrap; }
+.force-line .force-unit-name { color:#d0ffd0; font-weight:bold; }
+.force-line .force-unit-meta { color:#83bd83; font-size:12px; }
+.force-rp { color:#caffca; white-space:nowrap; }
+.force-line-actions { display:flex; gap:6px; align-items:center; }
+.force-line-actions button { border:1px solid #477a47; background:#101c10; color:#baffba; padding:5px 9px; cursor:pointer; }
+.catalogue-search { width:100%; margin-bottom:10px; border:1px solid #315f37; background:#050b05; color:#caffca; padding:10px; font:14px "Share Tech Mono",monospace; }
+@media(max-width:700px) { .catalogue-layout { grid-template-columns:1fr; } .catalogue-list { max-height:260px; } }
+
 @media(max-width:700px) {
     .monitor { padding:6px; }
     .workflow-panel { padding:18px 12px 30px; }
@@ -888,81 +925,39 @@ input[type="range"] {
 
                 <section id="forceScreen" class="hidden">
                     <h1 class="workflow-title">FORCE REGISTRATION</h1>
-                    <p class="workflow-subtitle">COMPANY MUSTER // INDIVIDUAL FORMATION RECORD</p>
+                    <p class="workflow-subtitle">CENTRAL REQUISITION CATALOGUE // VEYRA</p>
                     <div class="workflow-section">
                         <div class="unit-card-top">
-                            <div>
-                                <h2>02 // COMMANDER PROFILE</h2>
-                                <div class="workflow-muted" id="activePersonnelLabel">PERSONNEL SLOT NOT SELECTED</div>
-                            </div>
-                            <div class="unit-count" id="unitCount">0 / 5 UNITS REGISTERED</div>
+                            <div><h2>02 // COMMANDER PROFILE</h2><div class="workflow-muted" id="activePersonnelLabel">PERSONNEL SLOT NOT SELECTED</div></div>
+                            <div class="unit-count" id="unitCount">0 UNIT TYPES REGISTERED</div>
                         </div>
-                        <p class="workflow-muted">Register the formations or assets under your command. A unit represents an independently commanded formation or asset. You may register up to five units in this force.</p>
+                        <div class="force-budget">
+                            <div><span class="workflow-muted">FORCE ALLOCATION</span><br><strong id="forceBudget">300 RP</strong></div>
+                            <div><span class="workflow-muted">CURRENT EXPENDITURE</span><br><strong id="forceTotal">0 RP</strong></div>
+                            <div><span class="workflow-muted">REMAINING ALLOCATION</span><br><strong id="forceRemaining">300 RP</strong></div>
+                        </div>
+                        <div class="workflow-status" id="forceConnectionStatus">CONNECTING TO CENTRAL REQUISITION DATABASE...</div>
                     </div>
-
                     <div class="workflow-section">
-                        <h2>03 // ADD FORMATION / ASSET</h2>
-                        <div class="workflow-fields">
-                            <div class="workflow-field">
-                                <label for="unitName">FORMATION DESIGNATION</label>
-                                <input id="unitName" type="text" maxlength="50" placeholder="e.g. 1st Vanguard Company">
-                            </div>
-                            <div class="workflow-field">
-                                <label for="unitType">FORMATION CLASSIFICATION</label>
-                                <select id="unitType">
-                                    <option value="Infantry">INFANTRY</option>
-                                    <option value="Mechanised Infantry">MECHANISED INFANTRY</option>
-                                    <option value="Armour">ARMOURED</option>
-                                    <option value="Reconnaissance / Special Operations">RECONNAISSANCE / SPECIAL OPERATIONS</option>
-                                    <option value="Aircraft / Gunships">AIRCRAFT / GUNSHIPS</option>
-                                    <option value="Spacecraft">SPACECRAFT</option>
-                                    <option value="Logistics / Support">LOGISTICS / SUPPORT</option>
-                                    <option value="Other">OTHER</option>
-                                </select>
-                            </div>
-                            <div class="workflow-field full">
-                                <label for="unitComposition">UNIT COMPOSITION / STRENGTH</label>
-                                <textarea id="unitComposition" placeholder="Describe the squads, vehicles, personnel or assets included in this formation."></textarea>
-                            </div>
-                            <div class="workflow-field full">
-                                <label for="unitEquipment">EQUIPMENT / LOADOUT</label>
-                                <textarea id="unitEquipment" placeholder="List notable weapons, equipment, vehicles or upgrades."></textarea>
-                            </div>
-                            <div class="workflow-field">
-                                <label for="unitRP">REQUISITION COST (IF APPLICABLE)</label>
-                                <input id="unitRP" type="number" min="0" step="1" placeholder="Leave blank if not yet determined">
-                            </div>
-                            <div class="workflow-field">
-                                <label for="unitRole">PRIMARY ROLE (OPTIONAL)</label>
-                                <input id="unitRole" type="text" maxlength="60" placeholder="e.g. Assault, defence, reconnaissance">
-                            </div>
-                            <div class="workflow-field full">
-                                <label for="unitNotes">COMMAND NOTES (OPTIONAL)</label>
-                                <textarea id="unitNotes" placeholder="Additional information for the company commander."></textarea>
-                            </div>
-                        </div>
-                        <div class="workflow-actions">
-                            <button class="primary" id="addUnitButton" type="button" onclick="addOrUpdateUnit()">ADD UNIT TO FORCE</button>
-                            <button type="button" onclick="clearUnitForm()">CLEAR FORM</button>
+                        <h2>03 // REQUISITION CATALOGUE</h2>
+                        <p class="workflow-muted">Select a formation from the authorised catalogue to inspect its statistics, weapons and keywords. Select a quantity and add it to your force.</p>
+                        <input class="catalogue-search" id="catalogueSearch" type="search" placeholder="SEARCH UNIT NAME OR CATEGORY..." oninput="renderCatalogue()">
+                        <div class="catalogue-layout">
+                            <div><div class="catalogue-list" id="catalogueList"><p class="workflow-muted">AWAITING CATALOGUE DATA...</p></div></div>
+                            <div class="unit-detail" id="unitDetail"><p class="workflow-muted">SELECT A UNIT TO VIEW ITS REQUISITION PROFILE.</p></div>
                         </div>
                         <div class="workflow-status" id="forceStatus" aria-live="polite"></div>
                     </div>
-
                     <div class="workflow-section">
-                        <div class="unit-card-top">
-                            <h2>04 // REGISTERED FORCE</h2>
-                            <span class="unit-count" id="unitCountBottom">0 / 5</span>
-                        </div>
-                        <div class="unit-list" id="unitList">
-                            <p class="workflow-muted">NO FORMATIONS REGISTERED. Add your first unit above.</p>
-                        </div>
+                        <div class="unit-card-top"><h2>04 // REGISTERED FORCE</h2><span class="unit-count" id="unitCountBottom">0 UNIT TYPES</span></div>
+                        <div class="unit-list" id="unitList"><p class="workflow-muted">NO UNITS REGISTERED.</p></div>
                         <div class="workflow-actions">
-                            <button class="primary" type="button" onclick="saveForceDraft()">SAVE FORCE RECORD</button>
+                            <button class="primary" type="button" onclick="saveForceDraft()">SAVE FORCE TO CENTRAL DATABASE</button>
                             <button type="button" onclick="showDashboard()">RETURN TO COMMAND</button>
                         </div>
-                        <div class="workflow-status" id="saveStatus" aria-live="polite">Changes are saved in this browser as you work.</div>
+                        <div class="workflow-status" id="saveStatus" aria-live="polite">FORCE RECORD NOT YET SYNCHRONISED.</div>
                     </div>
-                    <p class="workflow-muted">REGISTRATION STATUS: DRAFT // COMPANY-WIDE SHARING WILL BE ENABLED WHEN THE SHARED DATABASE IS CONNECTED.</p>
+                    <p class="workflow-muted">FORCE LIMIT: 300 RP // NO FIXED UNIT COUNT LIMIT // CURRENT CATALOGUE PRICES APPLY.</p>
                 </section>
             </div>
         </div>
@@ -1271,11 +1266,11 @@ function scheduleGlitch() {
    accessCode is displayed as stars only; it is not a real password.
 ========================================================= */
 const PERSONNEL_SLOTS = [
-    { playerName: "Lt. Col. Will", personnelId: "", accessCode: "********" },
-    { playerName: "Lt. Col. Mitchel", personnelId: "", accessCode: "********" },
-    { playerName: "Lt. Col. Ben", personnelId: "", accessCode: "********" },
-    { playerName: "Lt. Col. Mark", personnelId: "", accessCode: "********" },
-    { playerName: "Lt. Col. Kevin", personnelId: "", accessCode: "********" }
+    { playerName: "Player One", personnelId: "", accessCode: "********" },
+    { playerName: "Player Two", personnelId: "", accessCode: "********" },
+    { playerName: "Player Three", personnelId: "", accessCode: "********" },
+    { playerName: "Player Four", personnelId: "", accessCode: "********" },
+    { playerName: "Player Five", personnelId: "", accessCode: "********" }
 ];
 
 function renderPersonnelSlots() {
@@ -1308,11 +1303,16 @@ const personnelNameField = document.getElementById("personnelName");
 const personnelCodeField = document.getElementById("personnelCode");
 const authenticateButton = document.getElementById("authenticateButton");
 const unitListElement = document.getElementById("unitList");
-const forceStorageKey = "freedomForceDrafts_v1";
+const forceStorageKey = "freedomForceDrafts_v1"; // retained for compatibility with earlier local drafts
+const FREEDOM_API_URL = "https://script.google.com/macros/s/AKfycbxe80hY5Z_lCBuFeDCkbRyXVzEoDspGCi_ETkUl6CzNUlhaibDHv6G5G6uOPngMCU1Z/exec";
 let selectedPersonnelSlot = null;
 let currentPersonnelSlot = null;
-let currentUnits = [];
-let editingUnitIndex = -1;
+let currentPersonnelId = null;
+let currentPlayerName = null;
+let currentUnits = []; // [{unitId, quantity}]
+let catalogueUnits = [];
+let selectedCatalogueUnitId = null;
+let campaignSettings = { RP_BUDGET: 300, FORCE_EDITING_ENABLED: true };
 let credentialTypingTimer = null;
 
 function readForceDrafts() {
@@ -1407,61 +1407,58 @@ function selectPersonnel(slot) {
         }
     }, 65);
 }
-function enterForceBuilder() {
+async function enterForceBuilder() {
     if (!selectedPersonnelSlot) return;
     currentPersonnelSlot = selectedPersonnelSlot;
-    const drafts = readForceDrafts();
-    const draft = drafts[currentPersonnelSlot] || {};
-    currentUnits = Array.isArray(draft.units) ? draft.units : [];
-    const configuredName = PERSONNEL_SLOTS[currentPersonnelSlot - 1].playerName ||
-        ("Commander " + currentPersonnelSlot);
-    drafts[currentPersonnelSlot] = { callsign: configuredName, units: currentUnits };
-    writeForceDrafts(drafts);
-
+    const person = PERSONNEL_SLOTS[currentPersonnelSlot - 1];
+    currentPlayerName = person.playerName || ("Commander " + currentPersonnelSlot);
+    currentPersonnelId = String(person.personnelId || person.playerName || ("PLAYER00" + currentPersonnelSlot)).trim();
     document.getElementById("dashboardPersonnelLabel").textContent =
-        personnelNameField.value + " // " + configuredName.toUpperCase();
+        personnelNameField.value + " // " + currentPlayerName.toUpperCase();
     showDashboard();
+    statusText.textContent = "COMMAND NETWORK // PERSONNEL " + currentPersonnelId;
 }
-function openForceBuilder() {
+async function openForceBuilder() {
     if (!currentPersonnelSlot) return;
-    const drafts = readForceDrafts();
-    const draft = drafts[currentPersonnelSlot] || {};
-    currentUnits = Array.isArray(draft.units) ? draft.units : [];
     document.getElementById("activePersonnelLabel").textContent =
-        "COMMANDER-0" + currentPersonnelSlot + " // " + (draft.callsign || ("COMMANDER " + currentPersonnelSlot));
+        currentPersonnelId + " // " + currentPlayerName;
     hideWorkflowScreens();
     dashboardScreen.classList.add("hidden");
     forceScreen.classList.remove("hidden");
     workflowPanel.scrollTop = 0;
-    renderUnits();
-    statusText.textContent = "FORCE REGISTRATION // SLOT 0" + currentPersonnelSlot;
+    statusText.textContent = "FORCE REGISTRATION // CENTRAL DATABASE";
+    document.getElementById("forceConnectionStatus").textContent = "CONNECTING TO CENTRAL REQUISITION DATABASE...";
+    await loadCatalogueAndForce();
 }
 function openCompanyRoster() {
-    const drafts = readForceDrafts();
-    const target = document.getElementById("companyRosterContent");
-    target.textContent = "";
-    for (let slot = 1; slot <= PERSONNEL_SLOTS.length; slot++) {
-        const record = drafts[slot] || {};
-        const block = document.createElement("div");
-        block.className = "unit-card";
-        const heading = document.createElement("h3");
-        heading.textContent = PERSONNEL_SLOTS[slot - 1].playerName + " // " + (record.callsign || "UNREGISTERED");
-        block.appendChild(heading);
-        const units = Array.isArray(record.units) ? record.units : [];
-        const summary = document.createElement("p");
-        summary.textContent = units.length ? units.length + " FORMATION(S) REGISTERED" : "NO FORCE RECORD SUBMITTED";
-        block.appendChild(summary);
-        units.forEach(function(unit, i) {
-            const detail = document.createElement("p");
-            detail.textContent = String(i + 1).padStart(2, "0") + " // " + unit.name + " — " + unit.type + (unit.composition ? " // " + unit.composition : "");
-            block.appendChild(detail);
-        });
-        target.appendChild(block);
-    }
     hideWorkflowScreens();
+    dashboardScreen.classList.add("hidden");
     rosterScreen.classList.remove("hidden");
     workflowPanel.scrollTop = 0;
-    statusText.textContent = "COMPANY MUSTER // LOCAL PREVIEW";
+    statusText.textContent = "COMPANY MUSTER // CENTRAL DATABASE";
+    const target = document.getElementById("companyRosterContent");
+    target.textContent = "RETRIEVING REGISTERED FORCE RECORDS...";
+    apiGet("getAllForces").then(function(data) {
+        if (!data.success) throw new Error(data.error || "Unable to retrieve company forces.");
+        target.textContent = "";
+        const forces = data.forces || [];
+        if (!forces.length) {
+            target.textContent = "NO PERSONNEL FORCE RECORDS HAVE BEEN SUBMITTED.";
+            return;
+        }
+        forces.forEach(function(force) {
+            const block = document.createElement("div"); block.className = "unit-card";
+            const heading = document.createElement("h3"); heading.textContent = (force.playerName || force.personnelId) + " // " + force.personnelId;
+            block.appendChild(heading);
+            const summary = document.createElement("p"); summary.textContent = "TOTAL EXPENDITURE: " + force.totalRP + " / " + campaignSettings.RP_BUDGET + " RP // REMAINING: " + force.remainingRP + " RP";
+            block.appendChild(summary);
+            (force.units || []).forEach(function(unit) {
+                const line = document.createElement("p"); line.textContent = unit.quantity + " × " + unit.unitName + " — " + unit.subtotal + " RP";
+                block.appendChild(line);
+            });
+            target.appendChild(block);
+        });
+    }).catch(function(error) { target.textContent = "DATABASE ERROR: " + error.message; });
 }
 function openDeploymentMap() {
     hideWorkflowScreens();
@@ -1480,101 +1477,275 @@ function changePersonnel() {
     workflowPanel.scrollTop = 0;
     statusText.textContent = "PERSONNEL REGISTRATION";
 }
-function getUnitFormData() {
-    const rpText = document.getElementById("unitRP").value.trim();
-    return {
-        name: document.getElementById("unitName").value.trim(),
-        type: document.getElementById("unitType").value,
-        composition: document.getElementById("unitComposition").value.trim(),
-        equipment: document.getElementById("unitEquipment").value.trim(),
-        rp: rpText === "" ? "" : Number(rpText),
-        role: document.getElementById("unitRole").value.trim(),
-        notes: document.getElementById("unitNotes").value.trim()
-    };
-}
-function addOrUpdateUnit() {
-    const unit = getUnitFormData();
-    const status = document.getElementById("forceStatus");
-    if (!unit.name) { status.textContent = "ERROR: ENTER A FORMATION DESIGNATION."; return; }
-    if (editingUnitIndex === -1 && currentUnits.length >= 5) {
-        status.textContent = "REGISTRATION LIMIT REACHED: MAXIMUM FIVE UNITS PER PERSONNEL SLOT."; return;
-    }
-    const wasEditing = editingUnitIndex >= 0;
-    if (wasEditing) currentUnits[editingUnitIndex] = unit;
-    else currentUnits.push(unit);
-    clearUnitForm();
-    renderUnits();
-    saveForceDraft();
-    status.textContent = "FORMATION RECORD " + (wasEditing ? "UPDATED" : "ADDED") + ".";
-}
-function clearUnitForm() {
-    ["unitName", "unitComposition", "unitEquipment", "unitRP", "unitRole", "unitNotes"].forEach(function(id) {
-        document.getElementById(id).value = "";
+function apiGet(action, params) {
+    return new Promise(function(resolve, reject) {
+        const callbackName = "freedomJsonp_" + Date.now() + "_" + Math.floor(Math.random() * 100000);
+        const script = document.createElement("script");
+        const query = new URLSearchParams(Object.assign({ action: action, callback: callbackName }, params || {}));
+        const timeout = setTimeout(function() { cleanup(); reject(new Error("Database request timed out.")); }, 15000);
+        function cleanup() { clearTimeout(timeout); try { delete window[callbackName]; } catch (_) { window[callbackName] = undefined; } if (script.parentNode) script.parentNode.removeChild(script); }
+        window[callbackName] = function(data) { cleanup(); resolve(data); };
+        script.onerror = function() { cleanup(); reject(new Error("Could not reach the F.R.E.E.D.O.M. database.")); };
+        script.src = FREEDOM_API_URL + "?" + query.toString();
+        document.head.appendChild(script);
     });
-    document.getElementById("unitType").selectedIndex = 0;
-    editingUnitIndex = -1;
-    document.getElementById("addUnitButton").textContent = "ADD UNIT TO FORCE";
 }
-function editUnit(index) {
-    const unit = currentUnits[index];
-    if (!unit) return;
-    document.getElementById("unitName").value = unit.name || "";
-    document.getElementById("unitType").value = unit.type || "Infantry";
-    document.getElementById("unitComposition").value = unit.composition || "";
-    document.getElementById("unitEquipment").value = unit.equipment || "";
-    document.getElementById("unitRP").value = unit.rp;
-    document.getElementById("unitRole").value = unit.role || "";
-    document.getElementById("unitNotes").value = unit.notes || "";
-    editingUnitIndex = index;
-    document.getElementById("addUnitButton").textContent = "UPDATE UNIT RECORD";
-    document.getElementById("unitName").focus();
-    workflowPanel.scrollTo({ top: document.getElementById("unitName").getBoundingClientRect().top + workflowPanel.scrollTop - 80, behavior: "smooth" });
+async function loadCatalogueAndForce() {
+    try {
+        const results = await Promise.all([apiGet("catalogue"), apiGet("settings")]);
+        if (!results[0].success) throw new Error(results[0].error || "Catalogue retrieval failed.");
+        catalogueUnits = results[0].units || [];
+        campaignSettings = results[1] || campaignSettings;
+        if (!Number.isFinite(Number(campaignSettings.RP_BUDGET))) campaignSettings.RP_BUDGET = 300;
+        const forceResult = await apiGet("getForce", { personnelId: currentPersonnelId });
+        if (!forceResult.success) throw new Error(forceResult.error || "Force retrieval failed.");
+        currentUnits = (forceResult.force.units || []).map(function(unit) { return { unitId: unit.unitId, quantity: Number(unit.quantity) }; });
+        selectedCatalogueUnitId = catalogueUnits.length ? catalogueUnits[0].unitId : null;
+        renderCatalogue();
+        renderUnits();
+        updateForceBudget();
+        document.getElementById("forceConnectionStatus").textContent = "CENTRAL DATABASE ONLINE // " + catalogueUnits.length + " CATALOGUE ENTRIES AVAILABLE.";
+        if (!campaignSettings.FORCE_EDITING_ENABLED) document.getElementById("forceStatus").textContent = "FORCE EDITING IS CURRENTLY DISABLED BY COMMAND.";
+    } catch (error) {
+        document.getElementById("forceConnectionStatus").textContent = "DATABASE CONNECTION ERROR // " + error.message;
+        document.getElementById("catalogueList").textContent = "CATALOGUE UNAVAILABLE. CHECK THE APPS SCRIPT DEPLOYMENT.";
+    }
 }
-function removeUnit(index) {
-    if (!confirm("Remove this formation from your draft force?")) return;
-    currentUnits.splice(index, 1);
+function renderCatalogue() {
+    const list = document.getElementById("catalogueList");
+    if (!list) return;
+    list.textContent = "";
+    const search = (document.getElementById("catalogueSearch")?.value || "").trim().toLowerCase();
+    const matches = catalogueUnits.filter(function(unit) {
+        const searchable = [unit.unitName, unit.category, unit.unitId, unit.description].join(" ").toLowerCase();
+        return searchable.includes(search);
+    });
+    if (!matches.length) {
+        const empty = document.createElement("div"); empty.className = "catalogue-empty";
+        empty.textContent = search ? "NO MATCHING UNITS FOUND. CHECK THE SEARCH TERM." : "NO UNITS ARE CURRENTLY LISTED IN THE REQUISITION CATALOGUE.";
+        list.appendChild(empty); renderUnitDetail(); return;
+    }
+
+    // Build category groups dynamically from the Google Sheets Category column.
+    const groups = {};
+    matches.forEach(function(unit) {
+        const category = String(unit.category || "UNCATEGORISED").trim() || "UNCATEGORISED";
+        if (!groups[category]) groups[category] = [];
+        groups[category].push(unit);
+    });
+
+    Object.keys(groups).sort(function(a, b) { return a.localeCompare(b); }).forEach(function(category) {
+        const heading = document.createElement("div"); heading.className = "catalogue-category-heading";
+        heading.textContent = category.toUpperCase();
+        const count = document.createElement("small"); count.textContent = groups[category].length + (groups[category].length === 1 ? " UNIT" : " UNITS");
+        heading.appendChild(count); list.appendChild(heading);
+        groups[category].slice().sort(function(a, b) { return a.unitName.localeCompare(b.unitName); }).forEach(function(unit) {
+            const button = document.createElement("button"); button.type = "button";
+            button.className = "catalogue-unit" + (unit.unitId === selectedCatalogueUnitId ? " selected" : "");
+            const info = document.createElement("span"); info.textContent = unit.unitName;
+            const sub = document.createElement("small"); sub.textContent = unit.unitId;
+            info.appendChild(sub);
+            const cost = document.createElement("strong"); cost.textContent = unit.rpCost + " RP";
+            button.append(info, cost);
+            button.onclick = function() { selectedCatalogueUnitId = unit.unitId; renderCatalogue(); renderUnitDetail(); };
+            list.appendChild(button);
+        });
+    });
+    renderUnitDetail();
+}
+
+function renderUnitDescription(container, source) {
+    // Supports Markdown tables, tab-separated tables, and flattened copied tables.
+    const lines = String(source || "").replace(/\r/g, "").split("\n").map(function(line) { return line.trim(); });
+    let i = 0;
+    const sectionNames = ["STATISTICS", "STATISTIC", "WEAPONS", "KEYWORDS", "COMPOSITION", "EQUIPMENT", "SPECIAL RULES", "DESCRIPTION"];
+    function cleanCell(value) { return String(value || "").trim().replace(/^\*\*(.*?)\*\*$/g, "$1").replace(/^__(.*?)__$/g, "$1"); }
+    function cellsFromPipe(line) { const cells = line.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(cleanCell); while (cells.length && !cells[cells.length - 1]) cells.pop(); return cells; }
+    function appendTable(headers, rows) {
+        if (!headers || !headers.length) return;
+        const table = document.createElement("table");
+        const thead = document.createElement("thead"); const headerRow = document.createElement("tr");
+        headers.forEach(function(value) { const th = document.createElement("th"); th.textContent = value; headerRow.appendChild(th); });
+        thead.appendChild(headerRow); table.appendChild(thead);
+        const tbody = document.createElement("tbody");
+        rows.forEach(function(values) {
+            const row = document.createElement("tr");
+            headers.forEach(function(_, index) { const td = document.createElement("td"); td.textContent = values[index] || ""; row.appendChild(td); });
+            tbody.appendChild(row);
+        });
+        table.appendChild(tbody); container.appendChild(table);
+    }
+    function isSeparator(line) { return /-{3,}/.test(line) && /^[|\s:-]+$/.test(line); }
+    function sectionHeading(line) {
+        const clean = cleanCell(line).replace(/:$/, "").trim();
+        return sectionNames.includes(clean.toUpperCase()) ? clean.toUpperCase() : null;
+    }
+
+    while (i < lines.length) {
+        const line = lines[i];
+        if (!line) { i++; continue; }
+
+        // Markdown pipe table.
+        if (line.includes("|") && i + 1 < lines.length && isSeparator(lines[i + 1])) {
+            const headers = cellsFromPipe(line); i += 2; const rows = [];
+            while (i < lines.length && lines[i].includes("|")) { rows.push(cellsFromPipe(lines[i])); i++; }
+            appendTable(headers, rows); continue;
+        }
+
+        // Tab-separated table (common when copying a table directly from Docs).
+        if (line.includes("\t")) {
+            const headers = line.split("\t").map(cleanCell); i++;
+            const rows = [];
+            while (i < lines.length && lines[i].includes("\t")) { rows.push(lines[i].split("\t").map(cleanCell)); i++; }
+            appendTable(headers, rows); continue;
+        }
+
+        const heading = sectionHeading(line);
+        if (heading) {
+            const h = document.createElement("h4"); h.className = "description-heading"; h.textContent = heading; container.appendChild(h); i++;
+            // Some copied Google Docs tables flatten into alternating cell values on separate lines.
+            if ((heading === "STATISTICS" || heading === "STATISTIC") && cleanCell(lines[i] || "").toUpperCase() === "STATISTIC" && cleanCell(lines[i + 1] || "").toUpperCase() === "VALUE") {
+                i += 2; const pairs = [];
+                while (i + 1 < lines.length && lines[i] && lines[i + 1] && !sectionHeading(lines[i])) { pairs.push([cleanCell(lines[i]), cleanCell(lines[i + 1])]); i += 2; }
+                appendTable(["Statistic", "Value"], pairs); continue;
+            }
+            if (heading === "WEAPONS" && cleanCell(lines[i] || "").toUpperCase() === "WEAPON") {
+                const headers = [];
+                while (i < lines.length && lines[i] && !sectionHeading(lines[i])) { headers.push(cleanCell(lines[i])); i++; if (headers.length >= 7) break; }
+                const values = [];
+                while (i < lines.length && lines[i] && !sectionHeading(lines[i])) { values.push(cleanCell(lines[i])); i++; }
+                if (headers.length && values.length) appendTable(headers, [values]);
+                continue;
+            }
+            continue;
+        }
+
+        // Render ordinary text safely; never inject catalogue content as HTML.
+        const paragraph = document.createElement("p");
+        paragraph.textContent = cleanCell(line).replace(/\*\*(.*?)\*\*/g, "$1");
+        container.appendChild(paragraph); i++;
+    }
+}
+function renderUnitDetail() {
+    const panel = document.getElementById("unitDetail");
+    const unit = catalogueUnits.find(function(item) { return item.unitId === selectedCatalogueUnitId; });
+    panel.textContent = "";
+    if (!unit) { panel.textContent = "SELECT A UNIT TO VIEW ITS REQUISITION PROFILE."; return; }
+    const heading = document.createElement("h3"); heading.textContent = unit.unitName;
+    const meta = document.createElement("div"); meta.className = "workflow-muted"; meta.textContent = unit.category + " // " + unit.unitId + " // " + unit.rpCost + " RP";
+    const description = document.createElement("div"); description.className = "unit-description";
+    renderUnitDescription(description, unit.description || "NO UNIT DESCRIPTION HAS BEEN ENTERED.");
+    const quantityRow = document.createElement("div"); quantityRow.className = "quantity-row";
+    const label = document.createElement("label"); label.textContent = "QUANTITY"; label.htmlFor = "selectedUnitQuantity";
+    const quantity = document.createElement("input"); quantity.type = "number"; quantity.id = "selectedUnitQuantity"; quantity.min = "1"; quantity.step = "1"; quantity.value = "1";
+    const add = document.createElement("button"); add.type = "button"; add.className = "primary"; add.textContent = "ADD TO FORCE";
+    add.onclick = function() { addCatalogueUnit(unit.unitId, Number(quantity.value)); };
+    quantityRow.append(label, quantity, add);
+    panel.append(heading, meta, description, quantityRow);
+}
+function addCatalogueUnit(unitId, quantity) {
+    const status = document.getElementById("forceStatus");
+    const unit = catalogueUnits.find(function(item) { return item.unitId === unitId; });
+    if (!unit) { status.textContent = "ERROR: CATALOGUE UNIT NOT FOUND."; return; }
+    if (!Number.isInteger(quantity) || quantity < 1) { status.textContent = "ENTER A VALID QUANTITY."; return; }
+    if (!campaignSettings.FORCE_EDITING_ENABLED) { status.textContent = "FORCE EDITING IS CURRENTLY DISABLED."; return; }
+    const existing = currentUnits.find(function(item) { return item.unitId === unitId; });
+    const newQuantity = (existing ? existing.quantity : 0) + quantity;
+    const proposedTotal = currentUnits.reduce(function(total, item) {
+        const catalogue = catalogueUnits.find(function(entry) { return entry.unitId === item.unitId; });
+        return total + (catalogue ? catalogue.rpCost * (item.unitId === unitId ? newQuantity : item.quantity) : 0);
+    }, 0);
+    if (proposedTotal > Number(campaignSettings.RP_BUDGET)) { status.textContent = "INSUFFICIENT RP. THIS ADDITION WOULD EXCEED THE " + campaignSettings.RP_BUDGET + " RP ALLOCATION."; return; }
+    if (existing) existing.quantity = newQuantity;
+    else currentUnits.push({ unitId: unitId, quantity: quantity });
     renderUnits();
-    saveForceDraft();
-    document.getElementById("forceStatus").textContent = "FORMATION REMOVED FROM DRAFT.";
+    status.textContent = quantity + " × " + unit.unitName.toUpperCase() + " ADDED TO FORCE.";
+}
+function updateForceBudget() {
+    const total = currentUnits.reduce(function(sum, item) {
+        const unit = catalogueUnits.find(function(entry) { return entry.unitId === item.unitId; });
+        return sum + (unit ? unit.rpCost * item.quantity : 0);
+    }, 0);
+    const budget = Number(campaignSettings.RP_BUDGET) || 300;
+    document.getElementById("forceBudget").textContent = budget + " RP";
+    document.getElementById("forceTotal").textContent = total + " RP";
+    document.getElementById("forceRemaining").textContent = (budget - total) + " RP";
+    document.getElementById("unitCount").textContent = currentUnits.length + " UNIT TYPES REGISTERED";
+    document.getElementById("unitCountBottom").textContent = currentUnits.length + " UNIT TYPES";
 }
 function renderUnits() {
-    unitListElement.textContent = "";
-    document.getElementById("unitCount").textContent = currentUnits.length + " / 5 UNITS REGISTERED";
-    document.getElementById("unitCountBottom").textContent = currentUnits.length + " / 5";
-    document.getElementById("addUnitButton").disabled = currentUnits.length >= 5 && editingUnitIndex === -1;
-    if (currentUnits.length === 0) {
-        const empty = document.createElement("p");
-        empty.className = "workflow-muted";
-        empty.textContent = "NO FORMATIONS REGISTERED. Add your first unit above.";
-        unitListElement.appendChild(empty);
-        return;
+    const list = document.getElementById("unitList");
+    if (!list) return;
+    list.textContent = "";
+    if (!currentUnits.length) {
+        const empty = document.createElement("p"); empty.className = "workflow-muted"; empty.textContent = "NO UNITS REGISTERED. SELECT FORMATIONS FROM THE CATALOGUE ABOVE."; list.appendChild(empty);
     }
-    currentUnits.forEach(function(unit, index) {
+    currentUnits.forEach(function(item) {
+        const unit = catalogueUnits.find(function(entry) { return entry.unitId === item.unitId; });
+        if (!unit) return;
         const card = document.createElement("div"); card.className = "unit-card";
-        const top = document.createElement("div"); top.className = "unit-card-top";
-        const heading = document.createElement("div");
-        const title = document.createElement("h3"); title.textContent = String(index + 1).padStart(2,"0") + " // " + unit.name;
-        const kind = document.createElement("div"); kind.className = "workflow-muted"; kind.textContent = unit.type + (unit.role ? " // " + unit.role : "");
-        heading.append(title, kind); top.appendChild(heading);
-        const actions = document.createElement("div"); actions.className = "unit-card-actions";
-        const edit = document.createElement("button"); edit.type="button"; edit.textContent="EDIT"; edit.onclick=function(){editUnit(index);};
-        const remove = document.createElement("button"); remove.type="button"; remove.textContent="REMOVE"; remove.onclick=function(){removeUnit(index);};
-        actions.append(edit, remove); top.appendChild(actions); card.appendChild(top);
-        [unit.composition ? "COMPOSITION: " + unit.composition : "", unit.equipment ? "EQUIPMENT: " + unit.equipment : "", unit.rp !== "" && unit.rp !== null && unit.rp !== undefined ? "REQUISITION COST: " + unit.rp + " RP" : "", unit.notes ? "NOTES: " + unit.notes : ""].filter(Boolean).forEach(function(line) {
-            const detail = document.createElement("p"); detail.textContent = line; card.appendChild(detail);
-        });
-        unitListElement.appendChild(card);
+        const line = document.createElement("div"); line.className = "force-line";
+        const info = document.createElement("div");
+        const name = document.createElement("div"); name.className = "force-unit-name"; name.textContent = item.quantity + " × " + unit.unitName;
+        const meta = document.createElement("div"); meta.className = "force-unit-meta"; meta.textContent = unit.category + " // " + unit.rpCost + " RP EACH";
+        info.append(name, meta);
+        const actions = document.createElement("div"); actions.className = "force-line-actions";
+        const minus = document.createElement("button"); minus.type = "button"; minus.textContent = "−"; minus.title = "Remove one"; minus.onclick = function() { changeUnitQuantity(item.unitId, -1); };
+        const plus = document.createElement("button"); plus.type = "button"; plus.textContent = "+"; plus.title = "Add one"; plus.onclick = function() { changeUnitQuantity(item.unitId, 1); };
+        const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "REMOVE"; remove.onclick = function() { currentUnits = currentUnits.filter(function(entry) { return entry.unitId !== item.unitId; }); renderUnits(); };
+        const subtotal = document.createElement("span"); subtotal.className = "force-rp"; subtotal.textContent = (unit.rpCost * item.quantity) + " RP";
+        actions.append(minus, plus, remove, subtotal); line.append(info, actions); card.appendChild(line); list.appendChild(card);
     });
+    updateForceBudget();
 }
-function saveForceDraft() {
-    if (!currentPersonnelSlot) return;
-    const drafts = readForceDrafts();
-    drafts[currentPersonnelSlot] = {
-        callsign: PERSONNEL_SLOTS[currentPersonnelSlot - 1].playerName || ("Commander " + currentPersonnelSlot),
-        units: currentUnits
-    };
-    const saved = writeForceDrafts(drafts);
-    document.getElementById("saveStatus").textContent = saved ? "DRAFT SAVED LOCALLY IN THIS BROWSER. SHARED SYNC NOT YET CONNECTED." : "LOCAL SAVE FAILED.";
+function changeUnitQuantity(unitId, delta) {
+    const item = currentUnits.find(function(entry) { return entry.unitId === unitId; });
+    if (!item) return;
+    const next = item.quantity + delta;
+    if (next <= 0) currentUnits = currentUnits.filter(function(entry) { return entry.unitId !== unitId; });
+    else {
+        const unit = catalogueUnits.find(function(entry) { return entry.unitId === unitId; });
+        const total = currentUnits.reduce(function(sum, entry) {
+            const catalogue = catalogueUnits.find(function(candidate) { return candidate.unitId === entry.unitId; });
+            return sum + (catalogue ? catalogue.rpCost * (entry.unitId === unitId ? next : entry.quantity) : 0);
+        }, 0);
+        if (total > Number(campaignSettings.RP_BUDGET)) { document.getElementById("forceStatus").textContent = "INSUFFICIENT RP FOR ADDITIONAL QUANTITY."; return; }
+        item.quantity = next;
+    }
+    renderUnits();
+}
+async function saveForceDraft() {
+    const status = document.getElementById("saveStatus");
+    if (!currentPersonnelId) { status.textContent = "ERROR: PERSONNEL IDENTITY NOT SET."; return; }
+    if (!campaignSettings.FORCE_EDITING_ENABLED) { status.textContent = "FORCE EDITING IS CURRENTLY DISABLED."; return; }
+    const total = currentUnits.reduce(function(sum, item) {
+        const unit = catalogueUnits.find(function(entry) { return entry.unitId === item.unitId; });
+        return sum + (unit ? unit.rpCost * item.quantity : 0);
+    }, 0);
+    if (total > Number(campaignSettings.RP_BUDGET)) { status.textContent = "SAVE REJECTED: FORCE EXCEEDS RP ALLOCATION."; return; }
+    status.textContent = "TRANSMITTING FORCE RECORD TO CENTRAL DATABASE...";
+    try {
+        // text/plain avoids a browser CORS preflight. The Apps Script parses the JSON body.
+        await fetch(FREEDOM_API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify({ action: "saveForce", personnelId: currentPersonnelId, playerName: currentPlayerName, units: currentUnits })
+        });
+        // Verify by reading the saved record back through the JSONP endpoint.
+        await new Promise(function(resolve) { setTimeout(resolve, 1200); });
+        const check = await apiGet("getForce", { personnelId: currentPersonnelId });
+        if (!check.success) throw new Error(check.error || "Save verification failed.");
+        const savedUnits = check.force.units || [];
+        const matches = savedUnits.length === currentUnits.length && currentUnits.every(function(item) {
+            const saved = savedUnits.find(function(entry) { return entry.unitId === item.unitId; });
+            return saved && Number(saved.quantity) === Number(item.quantity);
+        });
+        if (!matches) throw new Error("The database did not return the submitted force. Check the Apps Script deployment and sheet permissions.");
+        status.textContent = "FORCE RECORD SAVED AND VERIFIED // " + check.force.totalRP + " RP COMMITTED.";
+    } catch (error) {
+        status.textContent = "DATABASE SAVE ERROR // " + error.message;
+    }
 }
 function returnToPersonnel() {
     saveForceDraft();
