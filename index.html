@@ -1,0 +1,1010 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>F.R.E.E.D.O.M. Command Terminal</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;600;700;800&family=Rajdhani:wght@500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
+<style>
+/* =================================
+   1. GENERAL TERMINAL APPEARANCE
+   Fonts: Share Tech Mono (body), Rajdhani (headings/UI), Orbitron (alerts)
+   Google Fonts load when online; system fallbacks are provided.
+================================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background: #050805;
+    color: #8cff8c;
+    font-family: "Share Tech Mono", "Courier New", monospace;
+    overflow: hidden;
+}
+
+/* Main monitor */
+
+.monitor {
+    height: 100vh;
+    width: 100%;
+    padding: 25px;
+    display: flex;
+    flex-direction: column;
+    background: #080d08;
+}
+
+/* Screen frame */
+
+.screen {
+    position: relative;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+    border: 3px solid #31563a;
+    border-radius: 18px;
+    background: #030703;
+    box-shadow:
+        inset 0 0 45px rgba(70,255,70,0.12),
+        0 0 25px rgba(70,255,70,0.08);
+    animation: flicker 5s infinite;
+}
+
+/* =================================
+   2. CRT SCREEN EFFECTS
+================================= */
+
+/* Horizontal scanlines */
+
+.screen::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 5;
+    background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        rgba(0,0,0,0.15) 1px,
+        transparent 3px
+    );
+}
+
+/* Screen glow */
+
+.screen::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 4;
+    background: radial-gradient(
+        ellipse,
+        transparent 55%,
+        rgba(0,0,0,0.45) 100%
+    );
+}
+
+/* Slight screen flicker */
+
+@keyframes flicker {
+    0%, 97%, 100% { opacity: 1; }
+    98% { opacity: 0.94; }
+    99% { opacity: 0.98; }
+}
+
+/* =================================
+   3. TERMINAL HEADER
+================================= */
+
+.header {
+    font-family: "Rajdhani", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    position: relative;
+    z-index: 6;
+    display: flex;
+    justify-content: space-between;
+    padding: 15px 20px;
+    border-bottom: 1px solid #31563a;
+    background: rgba(10,20,10,0.95);
+    color: #aaffaa;
+    font-size: 13px;
+    letter-spacing: 2px;
+}
+
+.status {
+    color: #8cff8c;
+}
+
+.status::before {
+    content: "● ";
+}
+
+/* =================================
+   4. SCROLLING TEXT AREA
+================================= */
+
+.viewport {
+    position: absolute;
+    top: 55px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    overflow-y: auto;
+    scrollbar-width: none;
+    z-index: 2;
+}
+
+.viewport::-webkit-scrollbar {
+    display: none;
+}
+
+.document {
+    font-family: "Share Tech Mono", "Courier New", monospace;
+    max-width: 950px;
+    margin: 0 auto;
+    padding: 45px 35px 100px;
+    line-height: 1.8;
+    text-shadow: 0 0 5px rgba(100,255,100,0.5);
+    font-size: 15px;
+}
+
+.document h1 {
+    font-family: "Orbitron", "Rajdhani", sans-serif;
+    font-weight: 700;
+    text-align: center;
+    font-size: 27px;
+    letter-spacing: 3px;
+    color: #c5ffc5;
+    margin-bottom: 10px;
+}
+
+.document h2 {
+    font-family: "Rajdhani", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    color: #c5ffc5;
+    border-bottom: 1px solid #31563a;
+    padding-bottom: 8px;
+    margin-top: 45px;
+}
+
+.document h3 {
+    font-family: "Rajdhani", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    color: #baffba;
+    font-size: 16px;
+}
+
+.document p {
+    margin: 18px 0;
+}
+
+.document li {
+    margin: 8px 0;
+}
+
+.document strong {
+    color: #d0ffd0;
+}
+
+.document .subtitle {
+    text-align: center;
+    color: #aaffaa;
+    letter-spacing: 2px;
+    margin-bottom: 40px;
+}
+
+.document .warning {
+    font-family: "Orbitron", "Rajdhani", sans-serif;
+    font-weight: 600;
+    color: #ff5555;
+    text-shadow: 0 0 7px rgba(255,50,50,0.5);
+}
+
+.document table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+}
+
+.document th,
+.document td {
+    border: 1px solid #31563a;
+    padding: 10px;
+    text-align: left;
+}
+
+.document th {
+    color: #d0ffd0;
+    background: rgba(50,100,50,0.15);
+}
+
+.document .signature {
+    margin-top: 50px;
+    text-align: center;
+}
+
+/* =================================
+   5. CONTROL PANEL
+================================= */
+
+.controls {
+    position: relative;
+    z-index: 6;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 15px;
+    border-top: 1px solid #31563a;
+    background: #080d08;
+}
+
+button {
+    font-family: "Rajdhani", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: 15px;
+    background: #101c10;
+    border: 1px solid #477a47;
+    color: #aaffaa;
+    padding: 10px 18px;
+    font-family: inherit;
+    cursor: pointer;
+    letter-spacing: 1px;
+}
+
+button:hover {
+    background: #244229;
+    box-shadow: 0 0 10px rgba(100,255,100,0.3);
+}
+
+.controls label {
+    font-family: "Rajdhani", "Arial Narrow", sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: #8cff8c;
+}
+
+input[type="range"] {
+    accent-color: #8cff8c;
+    width: 110px;
+}
+
+/* Boot screen */
+
+.boot {
+    font-family: "Share Tech Mono", "Courier New", monospace;
+    position: absolute;
+    inset: 0;
+    z-index: 10;
+    background: #030703;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    padding: 25px;
+    color: #8cff8c;
+    line-height: 2;
+}
+
+.boot h2 {
+    font-family: "Orbitron", "Rajdhani", sans-serif;
+    letter-spacing: 3px;
+}
+
+.boot button {
+    margin-top: 20px;
+}
+
+.hidden {
+    display: none;
+}
+
+/* Small screen adjustments */
+
+@media (max-width: 600px) {
+    .monitor {
+        padding: 6px;
+    }
+
+    .document {
+        padding: 25px 15px 70px;
+        font-size: 13px;
+    }
+
+    .document h1 {
+        font-size: 20px;
+    }
+
+    .header {
+        font-size: 10px;
+        letter-spacing: 1px;
+    }
+}
+
+/* CRT GLITCH OVERLAY */
+.screen {
+    position: relative;
+}
+
+.glitch-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 8;
+    pointer-events: none;
+    overflow: hidden;
+    opacity: 0.35;
+    animation: screenFlicker 8s infinite;
+}
+
+/* Horizontal screen tearing */
+.glitch-overlay::before {
+    content: "";
+    position: absolute;
+    left: -5%;
+    width: 110%;
+    height: 12%;
+    top: 0;
+    opacity: 0;
+    background: linear-gradient(
+        to bottom,
+        transparent,
+        rgba(130, 255, 130, 0.18),
+        rgba(200, 255, 200, 0.35),
+        transparent
+    );
+    animation: screenTear 9s infinite steps(1);
+}
+
+/* Brief horizontal distortion lines */
+.glitch-overlay::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    background: repeating-linear-gradient(
+        to bottom,
+        transparent 0px,
+        transparent 3px,
+        rgba(150, 255, 150, 0.12) 4px,
+        transparent 5px
+    );
+    animation: staticBurst 11s infinite steps(1);
+}
+
+/* Occasional brightness fluctuations */
+@keyframes screenFlicker {
+    0%, 18%, 20%, 52%, 54%, 78%, 100% {
+        opacity: 0.25;
+    }
+    19%, 53%, 79% {
+        opacity: 0.65;
+    }
+    80% {
+        opacity: 0.1;
+    }
+}
+
+/* Moving horizontal tear */
+@keyframes screenTear {
+    0%, 15%, 16%, 48%, 49%, 100% {
+        opacity: 0;
+        transform: translateY(-100%);
+    }
+    15.2% {
+        opacity: 1;
+        transform: translateY(120px) translateX(8px);
+    }
+    15.5% {
+        opacity: 0.8;
+        transform: translateY(125px) translateX(-12px);
+    }
+    16% {
+        opacity: 0;
+    }
+    48.2% {
+        opacity: 1;
+        transform: translateY(350px) translateX(-6px);
+    }
+    48.6% {
+        opacity: 0;
+    }
+}
+
+/* Short bursts of static */
+@keyframes staticBurst {
+    0%, 32%, 33%, 67%, 68%, 100% {
+        opacity: 0;
+    }
+    32.2%, 67.2% {
+        opacity: 0.8;
+    }
+    32.5%, 67.5% {
+        opacity: 0.15;
+    }
+    32.8%, 67.8% {
+        opacity: 0;
+    }
+}
+
+
+/* =================================
+   7. STRONGER SIGNAL INTERFERENCE
+================================= */
+
+/* The overlay now produces visible tearing and static during glitch bursts. */
+.glitch-overlay {
+    opacity: 0;
+    mix-blend-mode: screen;
+    transition: opacity 0.04s linear;
+}
+
+.screen.glitch-burst .glitch-overlay {
+    opacity: 1;
+}
+
+.screen.glitch-burst .glitch-overlay::before {
+    opacity: 1;
+    height: 18%;
+    background:
+        linear-gradient(
+            to bottom,
+            transparent 0%,
+            rgba(190,255,190,0.25) 25%,
+            rgba(220,255,220,0.75) 48%,
+            rgba(70,255,90,0.35) 65%,
+            transparent 100%
+        );
+    animation: hardTear 0.24s steps(2) infinite;
+}
+
+.screen.glitch-burst .glitch-overlay::after {
+    opacity: 0.85;
+    background:
+        repeating-linear-gradient(
+            to bottom,
+            rgba(150,255,150,0.0) 0px,
+            rgba(150,255,150,0.0) 2px,
+            rgba(180,255,180,0.42) 3px,
+            rgba(0,0,0,0.0) 5px
+        );
+    animation: staticJump 0.16s steps(2) infinite;
+}
+
+/* Brief whole-screen displacement, like a failing CRT sync signal. */
+.screen.glitch-burst .viewport {
+    animation: viewportJolt 0.22s steps(2) infinite;
+}
+
+.screen.glitch-burst .header {
+    text-shadow: 2px 0 #d5ffd5, -3px 0 #1cff54;
+}
+
+@keyframes hardTear {
+    0%   { transform: translateY(8%) translateX(-2%); clip-path: inset(0 0 55% 0); }
+    25%  { transform: translateY(38%) translateX(3%); clip-path: inset(35% 0 20% 0); }
+    50%  { transform: translateY(68%) translateX(-4%); clip-path: inset(5% 0 65% 0); }
+    75%  { transform: translateY(22%) translateX(2%); clip-path: inset(55% 0 5% 0); }
+    100% { transform: translateY(80%) translateX(-1%); clip-path: inset(20% 0 45% 0); }
+}
+
+@keyframes staticJump {
+    0%   { transform: translateX(-2px); }
+    25%  { transform: translateX(4px) translateY(2px); }
+    50%  { transform: translateX(-5px) translateY(-1px); }
+    75%  { transform: translateX(3px); }
+    100% { transform: translateX(0); }
+}
+
+@keyframes viewportJolt {
+    0%   { transform: translateX(0); filter: brightness(1); }
+    25%  { transform: translateX(7px); filter: brightness(1.8) contrast(1.4); }
+    50%  { transform: translateX(-5px); filter: brightness(0.65); }
+    75%  { transform: translateX(3px); filter: brightness(1.5); }
+    100% { transform: translateX(0); filter: brightness(1); }
+}
+
+/* Individual lines of the contract occasionally corrupt and jump. */
+.document .glitch-target {
+    animation: textCorruption 0.28s steps(2) both;
+    color: #d9ffd9;
+    text-shadow:
+        3px 0 rgba(180,255,180,0.95),
+        -4px 0 rgba(20,255,90,0.8),
+        0 0 12px rgba(120,255,120,0.9);
+}
+
+@keyframes textCorruption {
+    0%   { transform: translateX(0); clip-path: inset(0 0 0 0); filter: none; }
+    20%  { transform: translateX(8px) skewX(4deg); clip-path: inset(15% 0 55% 0); }
+    40%  { transform: translateX(-10px) skewX(-5deg); clip-path: inset(55% 0 15% 0); filter: brightness(2); }
+    60%  { transform: translateX(5px); clip-path: inset(35% 0 35% 0); }
+    80%  { transform: translateX(-3px); clip-path: inset(5% 0 70% 0); }
+    100% { transform: translateX(0); clip-path: inset(0 0 0 0); filter: none; }
+}
+
+/* A little extra phosphor flare during a severe fault. */
+.screen.glitch-burst {
+    box-shadow:
+        inset 0 0 65px rgba(90,255,90,0.28),
+        0 0 32px rgba(90,255,90,0.22);
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="monitor">
+
+    <div class="screen">
+        <div class="glitch-overlay"></div>
+
+        <!-- BOOT SEQUENCE -->
+
+        <div class="boot" id="boot">
+
+            <div>
+                <h2>F.R.E.E.D.O.M.</h2>
+                <p>FRONTIER COMMAND NETWORK</p>
+                <p>ESTABLISHING SECURE CONNECTION...</p>
+                <p>AUTHENTICATION ACCEPTED</p>
+                <p>INCOMING TRANSMISSION DETECTED</p>
+                <button onclick="startTerminal()">
+                    ACCEPT TRANSMISSION
+                </button>
+            </div>
+
+        </div>
+
+        <!-- HEADER -->
+
+        <div class="header">
+
+            <span>F.R.E.E.D.O.M. // COMMAND TERMINAL</span>
+
+            <span class="status" id="status">
+                STANDBY
+            </span>
+
+        </div>
+
+        <!-- DOCUMENT VIEWPORT -->
+
+        <div class="viewport" id="viewport">
+
+            <div class="document" id="document">
+
+                <h1>PLANETARY LIBERATION CONTRACT</h1>
+
+                <div class="subtitle">
+                    CONTRACT DESIGNATION: VEYRA – OPERATION HOMESTEAD
+                </div>
+
+                <p><strong>ISSUING AUTHORITY:</strong> Provisional Government of Veyra</p>
+                <p><strong>CONTRACTING PARTY:</strong> Frontier Rapid Enforcement & Elimination Division for Outlaw Mitigation (F.R.E.E.D.O.M.)</p>
+                <p><strong>CONTRACT CLASSIFICATION:</strong> Planetary Liberation / Hostile Occupation</p>
+                <p><strong>CONTRACT STATUS:</strong> ACTIVE</p>
+                <p><strong>REWARD:</strong> Up to 150 Requisition Points (RP)</p>
+
+                <h2>01 // SITUATION REPORT</h2>
+
+                <p>To the Commanding Officer of F.R.E.E.D.O.M.,</p>
+
+                <p>The Provisional Government of Veyra formally requests the assistance of your organisation in the liberation of our homeworld.</p>
+
+                <p>Veyra was once a prosperous frontier colony, supporting a population spread across several major cities and industrial settlements. Its strategic importance lies in its mineral wealth, manufacturing capacity and position along several established trade routes.</p>
+
+                <p>This prosperity has been brought to an abrupt end by the <strong>Blackthorn Combine</strong>, an outlaw military organisation responsible for the seizure of our principal population centres and the collapse of planetary civil authority.</p>
+
+                <p>The Combine has established military control over the planet's cities, seized critical infrastructure and imposed its authority upon the civilian population. Our remaining security forces are scattered, poorly equipped and incapable of conducting a coordinated liberation campaign.</p>
+
+                <p>The Provisional Government retains limited resources and personnel, but lacks the military strength necessary to reclaim the planet.</p>
+
+                <p>We therefore seek to engage F.R.E.E.D.O.M. to conduct a sustained military operation against the Blackthorn Combine and restore Veyra to civilian control.</p>
+
+                <h2>02 // CONTRACT OBJECTIVES</h2>
+
+                <p>F.R.E.E.D.O.M. is hereby authorised and contracted to conduct military operations across Veyra with the following primary objectives:</p>
+
+                <h3>PRIMARY OBJECTIVE – LIBERATION OF CITIES</h3>
+
+                <ul>
+                    <li>Locate, assault and reclaim every designated city currently occupied by the Blackthorn Combine.</li>
+                    <li>Establish secure control over each reclaimed city.</li>
+                    <li>Prevent the destruction of civilian population centres and their critical infrastructure wherever operationally possible.</li>
+                    <li>Ensure that no more than two designated cities are destroyed during the operation.</li>
+                </ul>
+
+                <h3>SECONDARY OBJECTIVES – OPERATIONAL SUPPORT</h3>
+
+                <p>The following objectives are not mandatory for contract completion but are considered highly desirable:</p>
+
+                <ul>
+                    <li>Destroy or capture Blackthorn Combine military installations.</li>
+                    <li>Secure industrial facilities, resource extraction sites and manufacturing infrastructure.</li>
+                    <li>Re-establish control over major transport routes and logistical hubs.</li>
+                    <li>Recover captured government personnel and military equipment.</li>
+                    <li>Protect civilian populations and minimise unnecessary collateral damage.</li>
+                    <li>Eliminate or disrupt Blackthorn Combine command and communications capabilities.</li>
+                </ul>
+
+                <p>Successful completion of secondary objectives may provide additional strategic benefits to the Provisional Government, although no additional requisition payment is guaranteed under this contract.</p>
+
+                <h2>03 // PAYMENT AND REQUISITION ALLOCATION</h2>
+
+                <p>Upon successful completion of the primary objectives, F.R.E.E.D.O.M. shall receive a requisition allocation of up to <strong>150 Requisition Points (RP).</strong></p>
+
+                <p>The final payment shall be determined by the condition of Veyra's designated cities at the conclusion of the operation.</p>
+
+                <table>
+                    <tr>
+                        <th>CONTRACT OUTCOME</th>
+                        <th>REQUISITION PAYMENT</th>
+                    </tr>
+                    <tr>
+                        <td>All cities reclaimed, none destroyed</td>
+                        <td>150 RP</td>
+                    </tr>
+                    <tr>
+                        <td>All remaining cities reclaimed, 1 city destroyed</td>
+                        <td>100 RP</td>
+                    </tr>
+                    <tr>
+                        <td>All remaining cities reclaimed, 2 cities destroyed</td>
+                        <td>50 RP</td>
+                    </tr>
+                    <tr>
+                        <td class="warning">3 or more cities destroyed</td>
+                        <td class="warning">CONTRACT FAILURE – 0 RP</td>
+                    </tr>
+                </table>
+
+                <p>The destruction of a city constitutes a significant breach of the contract's preservation requirements. Each destroyed city will reduce the final requisition allocation by <strong>50 RP.</strong></p>
+
+                <p>The destruction of three or more designated cities shall constitute an automatic failure of the contract, regardless of the military success achieved elsewhere on the planet.</p>
+
+                <p>A city is considered destroyed when its population centre has suffered catastrophic damage and can no longer be considered a viable settlement. Temporary occupation, damage to individual structures or the loss of isolated infrastructure does not, by itself, constitute city destruction.</p>
+
+                <h2>04 // RULES OF ENGAGEMENT</h2>
+
+                <p>F.R.E.E.D.O.M. is granted operational discretion in the planning and execution of this contract.</p>
+
+                <p>The Provisional Government recognises that the liberation of Veyra will require military force and that casualties may be unavoidable. However, the following conditions are expected:</p>
+
+                <ul>
+                    <li>Civilian population centres are to be preserved wherever possible.</li>
+                    <li>Unnecessary destruction of critical infrastructure is strongly discouraged.</li>
+                    <li>Captured civilian personnel are to be treated as non-combatants.</li>
+                    <li>Blackthorn Combine military forces are considered hostile combatants.</li>
+                    <li>F.R.E.E.D.O.M. may establish forward operating bases, construct defensive positions and secure strategic facilities as required.</li>
+                </ul>
+
+                <p>The Provisional Government will not interfere with tactical or operational decisions made by F.R.E.E.D.O.M. commanders, provided those decisions remain consistent with the primary contract objectives.</p>
+
+                <h2>05 // CONTRACT DURATION AND TERMINATION</h2>
+
+                <p>This contract shall remain active until one of the following conditions is met:</p>
+
+                <ol>
+                    <li>All designated cities have been reclaimed and the operation is declared complete.</li>
+                    <li>Three or more designated cities have been destroyed, resulting in automatic contract failure.</li>
+                    <li>F.R.E.E.D.O.M. formally withdraws from the operation.</li>
+                </ol>
+
+                <p>Upon completion or termination, the Provisional Government reserves the right to assess the final condition of the planet and determine the requisition payment in accordance with Section 3.</p>
+
+                <h2>06 // FINAL DECLARATION</h2>
+
+                <p>Veyra is our home. Its cities are not merely strategic assets, and its population is not an acceptable cost of convenience.</p>
+
+                <p>We have watched our government collapse, our security forces scatter and our people live under the authority of criminals and opportunists. We no longer possess the means to liberate ourselves.</p>
+
+                <p>We are placing what remains of our world's future in your hands.</p>
+
+                <p>We ask that F.R.E.E.D.O.M. do what our own forces could not: break the occupation, reclaim our cities and give Veyra back to its people.</p>
+
+                <h3 class="warning">
+                    THE PROVISIONAL GOVERNMENT OF VEYRA AWAITS YOUR RESPONSE.
+                </h3>
+
+                <div class="signature">
+
+                    <p><strong>AUTHORISED BY:</strong></p>
+
+                    <p>Office of the Provisional Executive<br>
+                    Provisional Government of Veyra</p>
+
+                    <br>
+
+                    <p><strong>CONTRACT ACCEPTED BY:</strong></p>
+
+                    <p>Frontier Rapid Enforcement & Elimination Division for Outlaw Mitigation</p>
+
+                    <h2>F.R.E.E.D.O.M.</h2>
+
+                </div>
+
+                <p class="warning">
+                    // END OF TRANSMISSION //
+                </p>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <!-- CONTROL PANEL -->
+
+    <div class="controls">
+
+        <button onclick="toggleScroll()" id="pauseButton">
+            PAUSE
+        </button>
+
+        <button onclick="restartScroll()">
+            RESTART
+        </button>
+
+        <label>
+            SCROLL SPEED
+            <input
+                type="range"
+                id="speed"
+                min="1"
+                max="10"
+                value="3"
+            >
+        </label>
+
+        <button onclick="toggleFullscreen()">
+            FULLSCREEN
+        </button>
+
+    </div>
+
+</div>
+
+<script>
+/* =================================
+   6. TERMINAL FUNCTIONS
+================================= */
+
+const viewport = document.getElementById("viewport");
+const documentPanel = document.getElementById("document");
+const statusText = document.getElementById("status");
+const pauseButton = document.getElementById("pauseButton");
+const speedSlider = document.getElementById("speed");
+const screen = document.querySelector(".screen");
+const bootScreen = document.getElementById("boot");
+
+let scrolling = false;
+let scrollTimer = null;
+let typingTimer = null;
+let typingNodes = [];
+let typingNodeIndex = 0;
+let typingCharIndex = 0;
+let isTyping = false;
+let isPaused = false;
+let glitchTimeout = null;
+
+/* Prepare the existing contract for a character-by-character reveal.
+   All original formatting and wording are retained. */
+function prepareTypewriter() {
+    clearTimeout(typingTimer);
+    clearInterval(scrollTimer);
+
+    viewport.scrollTop = 0;
+    typingNodes = [];
+    typingNodeIndex = 0;
+    typingCharIndex = 0;
+
+    const walker = document.createTreeWalker(
+        documentPanel,
+        NodeFilter.SHOW_TEXT
+    );
+
+    let node;
+    while ((node = walker.nextNode())) {
+        const originalText = node.nodeValue;
+        if (originalText.length > 0) {
+            typingNodes.push({ node: node, text: originalText });
+            node.nodeValue = "";
+        }
+    }
+
+    isTyping = true;
+    scrolling = false;
+    isPaused = false;
+}
+
+/* Type until the visible screen has filled.
+   The rest of the contract is then revealed instantly before scrolling. */
+function typeNextCharacter() {
+    if (!isTyping || isPaused) return;
+
+    let charactersThisPass = 0;
+
+    while (typingNodeIndex < typingNodes.length && charactersThisPass < 4) {
+        const current = typingNodes[typingNodeIndex];
+
+        if (typingCharIndex < current.text.length) {
+            current.node.nodeValue += current.text.charAt(typingCharIndex);
+            typingCharIndex++;
+            charactersThisPass++;
+        } else {
+            typingNodeIndex++;
+            typingCharIndex = 0;
+        }
+    }
+
+    /* Check the layout periodically rather than after every character. */
+    if (typingNodes.length > 0 && viewport.scrollHeight >= viewport.clientHeight - 12) {
+        finishTypingAndScroll();
+        return;
+    }
+
+    if (typingNodeIndex >= typingNodes.length) {
+        finishTypingAndScroll();
+        return;
+    }
+
+    typingTimer = setTimeout(typeNextCharacter, 22);
+}
+
+/* Finish displaying the full document, then switch to ordinary scrolling. */
+function finishTypingAndScroll() {
+    clearTimeout(typingTimer);
+
+    for (let i = typingNodeIndex; i < typingNodes.length; i++) {
+        const entry = typingNodes[i];
+        if (i === typingNodeIndex) {
+            entry.node.nodeValue = entry.text.substring(0, typingCharIndex) +
+                entry.text.substring(typingCharIndex);
+        } else {
+            entry.node.nodeValue = entry.text;
+        }
+    }
+
+    isTyping = false;
+    typingNodes = [];
+
+    statusText.textContent = "TRANSMISSION ACTIVE";
+    pauseButton.textContent = "PAUSE";
+
+    /* A short pause lets the viewer register the completed initial screen. */
+    setTimeout(function() {
+        if (!isPaused) beginScrolling();
+    }, 700);
+}
+
+// Start terminal transmission
+function startTerminal() {
+    bootScreen.classList.add("hidden");
+    prepareTypewriter();
+
+    statusText.textContent = "RECEIVING TRANSMISSION";
+    pauseButton.textContent = "PAUSE";
+
+    typeNextCharacter();
+    console.log("F.R.E.E.D.O.M. transmission typing");
+}
+
+// Automatic scrolling after the initial typing phase
+function beginScrolling() {
+    clearInterval(scrollTimer);
+
+    scrolling = true;
+    statusText.textContent = "TRANSMISSION ACTIVE";
+    pauseButton.textContent = "PAUSE";
+
+    scrollTimer = setInterval(function() {
+        if (!scrolling || isPaused) return;
+
+        const speed = Number(speedSlider.value);
+        viewport.scrollTop += speed * 0.5;
+
+        if (viewport.scrollTop + viewport.clientHeight >= viewport.scrollHeight - 2) {
+            clearInterval(scrollTimer);
+            scrolling = false;
+            statusText.textContent = "TRANSMISSION COMPLETE";
+            pauseButton.textContent = "REPLAY";
+        }
+    }, 50);
+}
+
+// Pause and resume both the typing phase and the scrolling phase
+function toggleScroll() {
+    if (!bootScreen.classList.contains("hidden")) return;
+
+    if (statusText.textContent === "TRANSMISSION COMPLETE") {
+        restartScroll();
+        return;
+    }
+
+    isPaused = !isPaused;
+
+    if (isPaused) {
+        statusText.textContent = "TRANSMISSION PAUSED";
+        pauseButton.textContent = "RESUME";
+    } else {
+        pauseButton.textContent = "PAUSE";
+
+        if (isTyping) {
+            statusText.textContent = "RECEIVING TRANSMISSION";
+            typeNextCharacter();
+        } else {
+            statusText.textContent = "TRANSMISSION ACTIVE";
+            if (!scrolling) beginScrolling();
+        }
+    }
+}
+
+// Restart the entire transmission, including the typing effect
+function restartScroll() {
+    if (!bootScreen.classList.contains("hidden")) return;
+
+    clearTimeout(typingTimer);
+    clearInterval(scrollTimer);
+
+    prepareTypewriter();
+    statusText.textContent = "RECEIVING TRANSMISSION";
+    pauseButton.textContent = "PAUSE";
+
+    typeNextCharacter();
+}
+
+// Fullscreen
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen();
+    } else {
+        document.exitFullscreen();
+    }
+}
+
+/* Random, irregular signal faults. These do not affect the document text. */
+function scheduleGlitch() {
+    const delay = 2500 + Math.random() * 6500;
+
+    glitchTimeout = setTimeout(function() {
+        screen.classList.add("glitch-burst");
+
+        /* Occasionally corrupt one visible line of text as well. */
+        const candidates = Array.from(
+            documentPanel.querySelectorAll("h1, h2, h3, p, li, tr")
+        ).filter(function(element) {
+            const rect = element.getBoundingClientRect();
+            return rect.bottom > 55 && rect.top < window.innerHeight;
+        });
+
+        if (candidates.length > 0 && Math.random() < 0.8) {
+            const target = candidates[Math.floor(Math.random() * candidates.length)];
+            target.classList.add("glitch-target");
+
+            setTimeout(function() {
+                target.classList.remove("glitch-target");
+            }, 320);
+        }
+
+        setTimeout(function() {
+            screen.classList.remove("glitch-burst");
+            scheduleGlitch();
+        }, 180 + Math.random() * 260);
+    }, delay);
+}
+
+scheduleGlitch();
+</script>
+
+</body>
+</html>
