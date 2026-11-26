@@ -1092,6 +1092,7 @@ function typeNextCharacter() {
     if (!isTyping || isPaused) return;
 
     let charactersThisPass = 0;
+    let lastTypedNode = null;
 
     while (typingNodeIndex < typingNodes.length && charactersThisPass < 3) {
         const current = typingNodes[typingNodeIndex];
@@ -1100,6 +1101,7 @@ function typeNextCharacter() {
             current.node.nodeValue += current.text.charAt(typingCharIndex);
             typingCharIndex++;
             charactersThisPass++;
+            lastTypedNode = current.node;
         } else {
             /* Return to the normal typing pace once the Situation Report heading
                has appeared in full. The contract title and details above it
@@ -1113,18 +1115,23 @@ function typeNextCharacter() {
     }
 
     /*
-       Check the position of the text currently being typed.
-       scrollHeight is unreliable here because empty headings, paragraphs
-       and table cells still occupy layout space before their text appears.
+       Check the block containing the characters just revealed, not the NEXT
+       (still-empty) text node. The old check measured that next node, which
+       could report an incorrect position and prematurely finish the reveal.
+       Inline elements such as <strong> are measured through their containing
+       paragraph/list item/table cell so the check uses the real text block.
     */
-    const currentEntry = typingNodes[typingNodeIndex];
-    if (currentEntry && currentEntry.node.parentElement) {
-        const viewportRect = viewport.getBoundingClientRect();
-        const textBlockRect = currentEntry.node.parentElement.getBoundingClientRect();
+    if (lastTypedNode && viewport.clientHeight > 0) {
+        const parent = lastTypedNode.parentElement;
+        const textBlock = parent && parent.closest("h1, h2, h3, p, li, td, th, .subtitle, .signature");
+        if (textBlock) {
+            const viewportRect = viewport.getBoundingClientRect();
+            const textBlockRect = textBlock.getBoundingClientRect();
 
-        if (textBlockRect.bottom >= viewportRect.bottom - 18) {
-            finishTypingAndScroll();
-            return;
+            if (textBlockRect.bottom >= viewportRect.bottom - 18) {
+                finishTypingAndScroll();
+                return;
+            }
         }
     }
 
