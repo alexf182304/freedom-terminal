@@ -648,6 +648,34 @@ input[type="range"] {
 .catalogue-search { width:100%; margin-bottom:10px; border:1px solid #315f37; background:#050b05; color:#caffca; padding:10px; font:14px "Share Tech Mono",monospace; }
 @media(max-width:700px) { .catalogue-layout { grid-template-columns:1fr; } .catalogue-list { max-height:260px; } }
 
+/* Individual squad inspection and upgrade management */
+.squad-inspector { margin-top:16px; border:1px solid #83bd83; background:#061006; padding:16px; }
+.squad-inspector h3 { margin:0 0 8px; color:#d0ffd0; font:700 21px "Rajdhani",sans-serif; letter-spacing:1px; }
+.squad-inspector h4 { margin:18px 0 8px; padding-bottom:5px; border-bottom:1px solid #315f37; color:#baffba; font:700 15px "Rajdhani",sans-serif; letter-spacing:1.3px; }
+.squad-inspector p { color:#8eb88e; font-size:12px; line-height:1.5; }
+.squad-profile-table { width:100%; border-collapse:collapse; margin:8px 0 14px; font:12px "Share Tech Mono",monospace; }
+.squad-profile-table th,.squad-profile-table td { border:1px solid #315f37; padding:7px 8px; text-align:left; vertical-align:top; }
+.squad-profile-table th { color:#d0ffd0; background:#102010; }
+.squad-profile-table td.changed { color:#d0ffd0; background:rgba(80,160,80,.12); }
+.squad-keywords { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0 12px; }
+.squad-keyword { border:1px solid #477a47; padding:4px 7px; color:#baffba; font:11px "Share Tech Mono",monospace; }
+.keyword-description-list { margin:6px 0 14px; padding:8px 10px; border-left:2px solid #477a47; background:rgba(35,75,35,.12); }
+.keyword-description-list p { margin:4px 0; color:#9fce9f; font:12px/1.5 "Share Tech Mono",monospace; }
+.keyword-description-list strong { color:#d0ffd0; }
+.upgrade-list { display:grid; gap:8px; margin-top:9px; }
+.upgrade-entry { border:1px solid #315f37; background:#091409; padding:11px; }
+.upgrade-entry-top { display:flex; justify-content:space-between; gap:10px; align-items:flex-start; flex-wrap:wrap; }
+.upgrade-entry strong { color:#d0ffd0; font-family:"Rajdhani",sans-serif; font-size:16px; }
+.upgrade-entry p { margin:6px 0; }
+.upgrade-entry .upgrade-cost { color:#baffba; white-space:nowrap; font:13px "Share Tech Mono",monospace; }
+.upgrade-entry button { border:1px solid #477a47; background:#101c10; color:#baffba; padding:6px 10px; cursor:pointer; font:700 12px "Rajdhani",sans-serif; letter-spacing:1px; }
+.upgrade-entry button:disabled { opacity:.4; cursor:not-allowed; }
+.squad-inspector-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.squad-inspector-actions button { border:1px solid #477a47; background:#101c10; color:#baffba; padding:8px 12px; cursor:pointer; font:700 13px "Rajdhani",sans-serif; }
+.unit-card.selected-squad { border-color:#9cff9c; box-shadow:0 0 10px rgba(100,255,100,.12); }
+@media(max-width:700px) { .squad-profile-table { font-size:10px; } .squad-profile-table th,.squad-profile-table td { padding:5px; } }
+
+
 @media(max-width:700px) {
     .monitor { padding:6px; }
     .workflow-panel { padding:18px 12px 30px; }
@@ -929,7 +957,7 @@ input[type="range"] {
                     <div class="workflow-section">
                         <div class="unit-card-top">
                             <div><h2>02 // COMMANDER PROFILE</h2><div class="workflow-muted" id="activePersonnelLabel">PERSONNEL SLOT NOT SELECTED</div></div>
-                            <div class="unit-count" id="unitCount">0 UNIT TYPES REGISTERED</div>
+                            <div class="unit-count" id="unitCount">0 SQUADS REGISTERED</div>
                         </div>
                         <div class="force-budget">
                             <div><span class="workflow-muted">FORCE ALLOCATION</span><br><strong id="forceBudget">300 RP</strong></div>
@@ -940,7 +968,7 @@ input[type="range"] {
                     </div>
                     <div class="workflow-section">
                         <h2>03 // REQUISITION CATALOGUE</h2>
-                        <p class="workflow-muted">Select a formation from the authorised catalogue to inspect its statistics, weapons and keywords. Select a quantity and add it to your force.</p>
+                        <p class="workflow-muted">Select a formation from the authorised catalogue to inspect its profile. Register separate squads, then inspect any registered squad to install authorised upgrades and review its modified statistics, weapons and keywords.</p>
                         <input class="catalogue-search" id="catalogueSearch" type="search" placeholder="SEARCH UNIT NAME OR CATEGORY..." oninput="renderCatalogue()">
                         <div class="catalogue-layout">
                             <div><div class="catalogue-list" id="catalogueList"><p class="workflow-muted">AWAITING CATALOGUE DATA...</p></div></div>
@@ -949,8 +977,9 @@ input[type="range"] {
                         <div class="workflow-status" id="forceStatus" aria-live="polite"></div>
                     </div>
                     <div class="workflow-section">
-                        <div class="unit-card-top"><h2>04 // REGISTERED FORCE</h2><span class="unit-count" id="unitCountBottom">0 UNIT TYPES</span></div>
+                        <div class="unit-card-top"><h2>04 // REGISTERED FORCE</h2><span class="unit-count" id="unitCountBottom">0 SQUADS</span></div>
                         <div class="unit-list" id="unitList"><p class="workflow-muted">NO UNITS REGISTERED.</p></div>
+                        <div class="squad-inspector hidden" id="squadInspector" aria-live="polite"></div>
                         <div class="workflow-actions">
                             <button class="primary" type="button" onclick="saveForceDraft()">SAVE FORCE TO CENTRAL DATABASE</button>
                             <button type="button" onclick="showDashboard()">RETURN TO COMMAND</button>
@@ -1309,11 +1338,671 @@ let selectedPersonnelSlot = null;
 let currentPersonnelSlot = null;
 let currentPersonnelId = null;
 let currentPlayerName = null;
-let currentUnits = []; // [{unitId, quantity}]
+let currentUnits = []; // [{unitInstanceId, unitId, upgrades}]
 let catalogueUnits = [];
+let upgradeCatalogue = [];
 let selectedCatalogueUnitId = null;
+let selectedSquadInstanceId = null;
 let campaignSettings = { RP_BUDGET: 300, FORCE_EDITING_ENABLED: true };
 let credentialTypingTimer = null;
+
+/* =========================================================
+   INDIVIDUAL SQUAD INSTANCE HELPERS
+========================================================= */
+
+// Generate a unique ID for every registered squad.
+function createUnitInstanceId() {
+    if (window.crypto && typeof window.crypto.randomUUID === "function") {
+        return "SQUAD-" + window.crypto.randomUUID();
+    }
+
+    return "SQUAD-" +
+        Date.now().toString(36).toUpperCase() + "-" +
+        Math.random().toString(36).substring(2, 8).toUpperCase();
+}
+
+// Convert upgrade records into a consistent list of upgrade IDs.
+function normalizeUpgradeIds(upgrades) {
+    if (!Array.isArray(upgrades)) return [];
+
+    return upgrades.map(function(upgrade) {
+        return typeof upgrade === "string"
+            ? upgrade
+            : upgrade && (upgrade.upgradeId || upgrade.id);
+    }).filter(Boolean);
+}
+
+// Convert older quantity-based records and newer individual records
+// into the individual squad format used by this version of the terminal.
+function normalizeForceUnits(units) {
+    const normalized = [];
+
+    (units || []).forEach(function(unit) {
+        const upgrades = normalizeUpgradeIds(unit.upgrades);
+
+        if (unit.unitInstanceId) {
+            normalized.push({
+                unitInstanceId: unit.unitInstanceId,
+                unitId: unit.unitId,
+                customName: String(unit.customName || ""),
+                xp: Number(unit.xp) || 0,
+                rank: String(unit.rank || "Recruit"),
+                specialisation: String(unit.specialisation || ""),
+                unitHistory: String(unit.unitHistory || ""),
+                upgrades: upgrades
+            });
+            return;
+        }
+
+        const quantity = Math.max(1, Math.floor(Number(unit.quantity) || 1));
+        for (let i = 0; i < quantity; i++) {
+            normalized.push({
+                unitInstanceId: createUnitInstanceId(),
+                unitId: unit.unitId,
+                upgrades: i === 0 ? upgrades : []
+            });
+        }
+    });
+
+    return normalized;
+}
+
+function getSquadCatalogueUnit(squad) {
+    return catalogueUnits.find(function(unit) {
+        return unit.unitId === squad.unitId;
+    });
+}
+
+function getSquadCost(squad) {
+    const unit = getSquadCatalogueUnit(squad);
+    if (!unit) return 0;
+
+    const baseCost = Number(unit.rpCost) || 0;
+    const upgradeCost = normalizeUpgradeIds(squad.upgrades).reduce(
+        function(total, upgradeId) {
+            const upgrade = upgradeCatalogue.find(function(entry) {
+                return entry.upgradeId === upgradeId;
+            });
+            return total + (upgrade ? Number(upgrade.rpCost) || 0 : 0);
+        },
+        0
+    );
+
+    return baseCost + upgradeCost;
+}
+
+function getForceTotalRP() {
+    return currentUnits.reduce(function(total, squad) {
+        return total + getSquadCost(squad);
+    }, 0);
+}
+
+function getSquadUpgradeNames(squad) {
+    return normalizeUpgradeIds(squad.upgrades).map(function(upgradeId) {
+        const upgrade = upgradeCatalogue.find(function(entry) {
+            return entry.upgradeId === upgradeId;
+        });
+        return upgrade ? upgrade.upgradeName : upgradeId;
+    });
+}
+
+/* =========================================================
+   UNIT PROFILE PARSING AND UPGRADE EFFECTS
+========================================================= */
+function cleanProfileCell(value) {
+    return String(value == null ? "" : value).trim()
+        .replace(/^\*\*(.*?)\*\*$/g, "$1")
+        .replace(/^__(.*?)__$/g, "$1");
+}
+
+function profileHeaderKey(value) {
+    return cleanProfileCell(value).toLowerCase().replace(/[^a-z0-9]/g, "");
+}
+
+function getDescriptionTables(source) {
+    const lines = String(source || "").replace(/\r/g, "").split("\n");
+    const tables = [];
+    for (let i = 0; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        if (line.includes("|") && i + 1 < lines.length && /^\s*\|?[\s:|-]+\|?\s*$/.test(lines[i + 1]) && /-{3,}/.test(lines[i + 1])) {
+            const split = function(text) {
+                return text.trim().replace(/^\|/, "").replace(/\|$/, "").split("|").map(cleanProfileCell);
+            };
+            const headers = split(line);
+            i += 2;
+            const rows = [];
+            while (i < lines.length && lines[i].trim().includes("|")) {
+                rows.push(split(lines[i].trim()));
+                i++;
+            }
+            tables.push({ headers: headers, rows: rows });
+            i--;
+        } else if (line.includes("\t")) {
+            const headers = line.split("\t").map(cleanProfileCell);
+            const rows = [];
+            i++;
+            while (i < lines.length && lines[i].includes("\t")) {
+                rows.push(lines[i].split("\t").map(cleanProfileCell));
+                i++;
+            }
+            tables.push({ headers: headers, rows: rows });
+            i--;
+        }
+    }
+    return tables;
+}
+
+function parseUnitProfile(description) {
+    const profile = { stats: {}, weapons: [], keywords: [], keywordDescriptions: {} };
+    const tables = getDescriptionTables(description);
+
+    tables.forEach(function(table) {
+        const keys = table.headers.map(profileHeaderKey);
+        const statColumn = keys.findIndex(function(key) { return key === "statistic" || key === "stat"; });
+        const valueColumn = keys.findIndex(function(key) { return key === "value"; });
+
+        if (statColumn !== -1 && valueColumn !== -1) {
+            table.rows.forEach(function(row) {
+                const stat = cleanProfileCell(row[statColumn]).toUpperCase();
+                const value = cleanProfileCell(row[valueColumn]);
+                if (stat && value) profile.stats[stat] = value;
+            });
+            return;
+        }
+
+        const weaponColumn = keys.findIndex(function(key) { return key === "weapon" || key === "weapons"; });
+        if (weaponColumn !== -1) {
+            table.rows.forEach(function(row) {
+                const weapon = {};
+                table.headers.forEach(function(header, index) {
+                    const key = profileHeaderKey(header);
+                    if (!key) return;
+                    if (key === "weapon" || key === "weapons") weapon.name = cleanProfileCell(row[index]);
+                    else if (key === "attack" || key === "aim" || key === "pen" || key === "damage" || key === "range") weapon[key] = cleanProfileCell(row[index]);
+                    else if (key === "keywords") weapon.keywords = cleanProfileCell(row[index]).split(/[,;]/).map(function(item) { return item.trim(); }).filter(Boolean);
+                    else weapon[key] = cleanProfileCell(row[index]);
+                });
+                if (weapon.name) profile.weapons.push(weapon);
+            });
+        }
+    });
+
+    // Also recognise simple STATISTICS sections copied as alternating lines.
+    if (!Object.keys(profile.stats).length) {
+        const lines = String(description || "").replace(/\r/g, "").split("\n").map(cleanProfileCell);
+        let inStats = false;
+        for (let i = 0; i < lines.length; i++) {
+            const upper = lines[i].replace(/:$/, "").toUpperCase();
+            if (upper === "STATISTICS" || upper === "STATISTIC") { inStats = true; continue; }
+            if (inStats && ["WEAPONS", "KEYWORDS", "EQUIPMENT", "SPECIAL RULES"].includes(upper)) break;
+            if (inStats && lines[i] && lines[i + 1]) {
+                const stat = lines[i].replace(/\*\*/g, "").trim().toUpperCase();
+                const value = lines[i + 1].trim();
+                if (/^[A-Z][A-Z0-9 _-]{0,12}$/.test(stat) && value && !value.includes("|")) {
+                    profile.stats[stat] = value;
+                    i++;
+                }
+            }
+        }
+    }
+
+    const keywordMatch = String(description || "").match(/(?:\*\*)?KEYWORDS(?:\*\*)?\s*:\s*([^\n]+)/i);
+    if (keywordMatch) {
+        profile.keywords = keywordMatch[1].replace(/\*\*/g, "").split(/[,;]/).map(function(item) {
+            return item.trim().replace(/[.]$/, "");
+        }).filter(Boolean);
+    }
+
+    // Existing catalogue descriptions may place keyword explanations below
+    // the keyword list / weapon table as "Keyword; explanation" or
+    // "Keyword: explanation". Keep these explanations attached to the
+    // matching unit or weapon keyword without requiring a separate catalogue.
+    const descriptionLines = String(description || "").replace(/\r/g, "").split("\n");
+    descriptionLines.forEach(function(line) {
+        const match = line.trim().match(/^(.+?)\s*[;:]\s*(.+)$/);
+        if (!match) return;
+        const keyword = cleanProfileCell(match[1]).replace(/[.]$/, "").trim();
+        const explanation = cleanProfileCell(match[2]);
+        if (!keyword || !explanation) return;
+
+        const matchingUnitKeyword = profile.keywords.find(function(item) { return matchesKeywordDescription(item, keyword); });
+        if (matchingUnitKeyword) profile.keywordDescriptions[matchingUnitKeyword] = explanation;
+        profile.weapons.forEach(function(weapon) {
+            const weaponKeywords = Array.isArray(weapon.keywords)
+                ? weapon.keywords
+                : String(weapon.keywords || "").split(/[,;]/).map(function(item) { return item.trim(); }).filter(Boolean);
+            const matchingWeaponKeyword = weaponKeywords.find(function(item) { return matchesKeywordDescription(item, keyword); });
+            if (matchingWeaponKeyword) {
+                if (!weapon.keywordDescriptions) weapon.keywordDescriptions = {};
+                weapon.keywordDescriptions[matchingWeaponKeyword] = explanation;
+            }
+        });
+    });
+
+    return profile;
+}
+
+function normalizeProfileKeywords(value) {
+    if (Array.isArray(value)) return value.map(function(item) { return String(item).trim(); }).filter(Boolean);
+    return String(value || "").split(/[,;]/).map(function(item) { return item.trim(); }).filter(Boolean);
+}
+
+function matchesKeywordDescription(listedKeyword, descriptionKeyword) {
+    const listed = String(listedKeyword || "").trim().toLowerCase();
+    const described = String(descriptionKeyword || "").trim().toLowerCase();
+    if (!listed || !described) return false;
+    if (listed === described) return true;
+
+    // Generic rules such as "Explosive (x)" describe parameterised entries
+    // such as "Explosive (2)" in a weapon's keyword cell.
+    if (described.includes("(x)")) {
+        const prefix = described.replace("(x)", "");
+        return listed.startsWith(prefix) && listed.slice(prefix.length).startsWith("(") && listed.endsWith(")");
+    }
+    return false;
+}
+
+function normalizeKeywordDescriptionMap(value) {
+    if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+    const result = {};
+    Object.keys(value).forEach(function(key) {
+        const keyword = String(key || "").trim();
+        const description = String(value[key] == null ? "" : value[key]).trim();
+        if (keyword && description) result[keyword] = description;
+    });
+    return result;
+}
+
+function applyKeywordDescriptionMap(target, source) {
+    const additions = normalizeKeywordDescriptionMap(source);
+    if (!target.keywordDescriptions) target.keywordDescriptions = {};
+    Object.keys(additions).forEach(function(keyword) {
+        target.keywordDescriptions[keyword] = additions[keyword];
+    });
+}
+
+function cloneUnitProfile(profile) {
+    return {
+        stats: Object.assign({}, profile.stats || {}),
+        warnings: (profile.warnings || []).slice(),
+        weapons: (profile.weapons || []).map(function(weapon) {
+            const copy = Object.assign({}, weapon);
+            if (Array.isArray(weapon.keywords)) copy.keywords = weapon.keywords.slice();
+            else if (weapon.keywords) copy.keywords = normalizeProfileKeywords(weapon.keywords);
+            copy.keywordDescriptions = normalizeKeywordDescriptionMap(weapon.keywordDescriptions);
+            return copy;
+        }),
+        keywords: (profile.keywords || []).slice(),
+        keywordDescriptions: normalizeKeywordDescriptionMap(profile.keywordDescriptions)
+    };
+}
+
+function updateStatValue(oldValue, operation, amount) {
+    const match = String(oldValue == null ? "0" : oldValue).match(/^\s*(-?\d+(?:\.\d+)?)\s*(.*)$/);
+    const oldNumber = match ? Number(match[1]) : 0;
+    const suffix = match ? match[2] : "";
+    let next;
+    if (operation === "add") next = oldNumber + Number(amount);
+    else if (operation === "multiply") next = oldNumber * Number(amount);
+    else next = Number(amount);
+    if (!Number.isFinite(next)) return String(amount);
+    if (Math.abs(next - Math.round(next)) < 0.000001) next = Math.round(next);
+    else next = Number(next.toFixed(2));
+    return String(next) + suffix;
+}
+
+function findWeaponIndex(weapons, weaponName) {
+    const target = String(weaponName || "").toLowerCase().trim();
+    let exact = weapons.findIndex(function(weapon) { return String(weapon.name || "").toLowerCase().trim() === target; });
+    if (exact !== -1) return exact;
+    return weapons.findIndex(function(weapon) {
+        const current = String(weapon.name || "").toLowerCase().trim();
+        return current && target && (current.includes(target) || target.includes(current));
+    });
+}
+
+function applyUpgradeEffectsToProfile(baseProfile, upgrades) {
+    const profile = cloneUnitProfile(baseProfile);
+    profile.warnings = [];
+    (upgrades || []).forEach(function(upgrade) {
+        const effects = Array.isArray(upgrade.effects) ? upgrade.effects : [];
+        effects.forEach(function(effect) {
+            if (!effect || !effect.type) return;
+            const type = String(effect.type).toLowerCase();
+
+            if (["add", "multiply", "set"].includes(type)) {
+                const stat = String(effect.stat || "").toUpperCase();
+                if (!stat) return;
+                profile.stats[stat] = updateStatValue(profile.stats[stat], type, effect.value);
+            } else if (type === "add_keyword") {
+                const keyword = String(effect.value || "").trim();
+                if (keyword && !profile.keywords.some(function(item) { return item.toLowerCase() === keyword.toLowerCase(); })) profile.keywords.push(keyword);
+                if (keyword && String(effect.description || "").trim()) {
+                    const existingKey = Object.keys(profile.keywordDescriptions || {}).find(function(item) { return item.toLowerCase() === keyword.toLowerCase(); }) || keyword;
+                    profile.keywordDescriptions[existingKey] = String(effect.description).trim();
+                }
+            } else if (type === "remove_keyword") {
+                const keyword = String(effect.value || "").trim().toLowerCase();
+                profile.keywords = profile.keywords.filter(function(item) { return item.toLowerCase() !== keyword; });
+                Object.keys(profile.keywordDescriptions || {}).forEach(function(item) {
+                    if (item.toLowerCase() === keyword) delete profile.keywordDescriptions[item];
+                });
+            } else if (type === "add_weapon") {
+                if (effect.weapon && effect.weapon.name) {
+                    const newWeapon = Object.assign({}, effect.weapon);
+                    newWeapon.keywords = normalizeProfileKeywords(newWeapon.keywords);
+                    const weaponDescriptions = newWeapon.keywordDescriptions || newWeapon.keyword_descriptions || effect.keyword_descriptions || effect.keywordDescriptions;
+                    newWeapon.keywordDescriptions = normalizeKeywordDescriptionMap(weaponDescriptions);
+                    applyKeywordDescriptionMap(newWeapon, weaponDescriptions);
+                    profile.weapons.push(newWeapon);
+                } else profile.warnings.push(upgrade.upgradeName + ": ADD WEAPON EFFECT HAS NO VALID WEAPON NAME.");
+            } else if (type === "modify_weapon") {
+                const index = findWeaponIndex(profile.weapons, effect.weapon_name);
+                if (index !== -1 && effect.changes && typeof effect.changes === "object") {
+                    Object.keys(effect.changes).forEach(function(key) {
+                        if (key === "keywords") profile.weapons[index].keywords = normalizeProfileKeywords(effect.changes[key]);
+                        else if (key !== "keyword_descriptions" && key !== "keywordDescriptions") profile.weapons[index][key] = effect.changes[key];
+                    });
+                    applyKeywordDescriptionMap(profile.weapons[index], effect.changes.keyword_descriptions || effect.changes.keywordDescriptions);
+                    applyKeywordDescriptionMap(profile.weapons[index], effect.keyword_descriptions || effect.keywordDescriptions);
+                } else {
+                    profile.warnings.push(upgrade.upgradeName + ": COULD NOT MODIFY WEAPON '" + (effect.weapon_name || "UNSPECIFIED") + "'. CHECK THE WEAPON NAME.");
+                }
+            } else if (type === "replace_weapon") {
+                const index = findWeaponIndex(profile.weapons, effect.weapon_name);
+                if (index !== -1 && effect.replacement && effect.replacement.name) {
+                    const replacement = Object.assign({}, effect.replacement);
+                    replacement.keywords = normalizeProfileKeywords(replacement.keywords);
+                    replacement.keywordDescriptions = normalizeKeywordDescriptionMap(replacement.keywordDescriptions || effect.keyword_descriptions);
+                    applyKeywordDescriptionMap(replacement, effect.keyword_descriptions || effect.keywordDescriptions);
+                    profile.weapons[index] = replacement;
+                } else profile.warnings.push(upgrade.upgradeName + ": COULD NOT REPLACE WEAPON '" + (effect.weapon_name || "UNSPECIFIED") + "'. CHECK THE WEAPON NAME AND REPLACEMENT.");
+            } else if (type === "remove_weapon") {
+                const index = findWeaponIndex(profile.weapons, effect.weapon_name);
+                if (index !== -1) profile.weapons.splice(index, 1);
+                else profile.warnings.push(upgrade.upgradeName + ": COULD NOT REMOVE WEAPON '" + (effect.weapon_name || "UNSPECIFIED") + "'. CHECK THE WEAPON NAME.");
+            } else {
+                profile.warnings.push(upgrade.upgradeName + ": UNSUPPORTED EFFECT TYPE '" + type + "'.");
+            }
+        });
+    });
+    return profile;
+}
+
+function getUpgradeForId(upgradeId) {
+    return upgradeCatalogue.find(function(upgrade) { return upgrade.upgradeId === upgradeId; });
+}
+
+function isUpgradeApplicable(upgrade, squad) {
+    const unit = getSquadCatalogueUnit(squad);
+    if (!unit) return false;
+    const applies = String(upgrade.appliesTo || "*").split(",").map(function(item) { return item.trim().toLowerCase(); });
+    return applies.includes("*") || applies.includes(String(unit.category || "").toLowerCase()) || applies.includes(String(unit.unitId || "").toLowerCase());
+}
+
+function getSquadProfile(squad) {
+    const unit = getSquadCatalogueUnit(squad);
+    if (!unit) return { base: { stats: {}, weapons: [], keywords: [] }, modified: { stats: {}, weapons: [], keywords: [] } };
+    const base = parseUnitProfile(unit.description || "");
+    const assigned = normalizeUpgradeIds(squad.upgrades).map(getUpgradeForId).filter(Boolean);
+    const modified = applyUpgradeEffectsToProfile(base, assigned);
+    return { base: base, modified: modified, warnings: modified.warnings || [] };
+}
+
+function appendProfileTable(container, headingText, headers, rows) {
+    const heading = document.createElement("h4");
+    heading.textContent = headingText;
+    container.appendChild(heading);
+    if (!rows.length) {
+        const empty = document.createElement("p");
+        empty.textContent = "NO PROFILE DATA AVAILABLE IN THE UNIT CATALOGUE.";
+        container.appendChild(empty);
+        return;
+    }
+    const table = document.createElement("table");
+    table.className = "squad-profile-table";
+    const thead = document.createElement("thead");
+    const headerRow = document.createElement("tr");
+    headers.forEach(function(label) { const th = document.createElement("th"); th.textContent = label; headerRow.appendChild(th); });
+    thead.appendChild(headerRow); table.appendChild(thead);
+    const tbody = document.createElement("tbody");
+    rows.forEach(function(values) {
+        const row = document.createElement("tr");
+        values.forEach(function(value, index) { const td = document.createElement("td"); td.textContent = value == null ? "" : String(value); if (index > 0 && values.changed) td.className = "changed"; row.appendChild(td); });
+        tbody.appendChild(row);
+    });
+    table.appendChild(tbody); container.appendChild(table);
+}
+
+function renderSquadProfile(container, title, profile) {
+    const statNames = Array.from(new Set(Object.keys(profile.base.stats).concat(Object.keys(profile.modified.stats))));
+    const statRows = statNames.map(function(stat) {
+        const baseValue = profile.base.stats[stat] == null ? "—" : String(profile.base.stats[stat]);
+        const modifiedValue = profile.modified.stats[stat] == null ? "—" : String(profile.modified.stats[stat]);
+        const row = [stat, baseValue, modifiedValue];
+        row.changed = baseValue !== modifiedValue;
+        return row;
+    });
+    appendProfileTable(container, title + " // STATISTICS", ["STATISTIC", "BASE", "CURRENT"], statRows);
+
+    const weaponRows = profile.modified.weapons.map(function(weapon) {
+        return [
+            weapon.name || "—",
+            weapon.attack == null ? "—" : weapon.attack,
+            weapon.aim == null ? "—" : weapon.aim,
+            weapon.pen == null ? "—" : weapon.pen,
+            weapon.damage == null ? "—" : weapon.damage,
+            weapon.range == null ? "—" : weapon.range,
+            normalizeProfileKeywords(weapon.keywords).join(", ") || "—"
+        ];
+    });
+    appendProfileTable(container, title + " // WEAPONS", ["WEAPON", "ATTACK", "AIM", "PEN", "DAMAGE", "RANGE", "KEYWORDS"], weaponRows);
+
+    const weaponExplanations = [];
+    profile.modified.weapons.forEach(function(weapon) {
+        const descriptions = normalizeKeywordDescriptionMap(weapon.keywordDescriptions);
+        Object.keys(descriptions).forEach(function(keyword) {
+            const present = normalizeProfileKeywords(weapon.keywords).some(function(item) { return item.toLowerCase() === keyword.toLowerCase(); });
+            if (present) weaponExplanations.push({ weapon: weapon.name || "WEAPON", keyword: keyword, description: descriptions[keyword] });
+        });
+    });
+    if (weaponExplanations.length) {
+        const explanationHeading = document.createElement("h4");
+        explanationHeading.textContent = title + " // WEAPON KEYWORD EXPLANATIONS";
+        container.appendChild(explanationHeading);
+        const explanationList = document.createElement("div");
+        explanationList.className = "keyword-description-list";
+        weaponExplanations.forEach(function(item) {
+            const line = document.createElement("p");
+            const label = document.createElement("strong");
+            label.textContent = item.weapon + " — " + item.keyword + ": ";
+            line.append(label, document.createTextNode(item.description));
+            explanationList.appendChild(line);
+        });
+        container.appendChild(explanationList);
+    }
+
+    const heading = document.createElement("h4");
+    heading.textContent = title + " // UNIT KEYWORDS";
+    container.appendChild(heading);
+    const keywordWrap = document.createElement("div");
+    keywordWrap.className = "squad-keywords";
+    const keywords = profile.modified.keywords || [];
+    if (!keywords.length) {
+        const empty = document.createElement("p"); empty.textContent = "NO UNIT KEYWORDS LISTED."; keywordWrap.appendChild(empty);
+    } else {
+        keywords.forEach(function(keyword) { const tag = document.createElement("span"); tag.className = "squad-keyword"; tag.textContent = keyword; keywordWrap.appendChild(tag); });
+    }
+    container.appendChild(keywordWrap);
+
+    const keywordDescriptions = normalizeKeywordDescriptionMap(profile.modified.keywordDescriptions);
+    const visibleDescriptions = Object.keys(keywordDescriptions).filter(function(keyword) {
+        return keywords.some(function(item) { return item.toLowerCase() === keyword.toLowerCase(); });
+    });
+    if (visibleDescriptions.length) {
+        const explanationList = document.createElement("div");
+        explanationList.className = "keyword-description-list";
+        visibleDescriptions.forEach(function(keyword) {
+            const line = document.createElement("p");
+            const label = document.createElement("strong");
+            label.textContent = keyword + ": ";
+            line.append(label, document.createTextNode(keywordDescriptions[keyword]));
+            explanationList.appendChild(line);
+        });
+        container.appendChild(explanationList);
+    }
+}
+
+function applyUpgradeToSquad(unitInstanceId, upgradeId) {
+    const squad = currentUnits.find(function(item) { return item.unitInstanceId === unitInstanceId; });
+    const upgrade = getUpgradeForId(upgradeId);
+    if (!squad || !upgrade) return;
+    if (!campaignSettings.FORCE_EDITING_ENABLED) { document.getElementById("forceStatus").textContent = "FORCE EDITING IS CURRENTLY DISABLED."; return; }
+    if (!isUpgradeApplicable(upgrade, squad)) { document.getElementById("forceStatus").textContent = "THIS UPGRADE IS NOT AUTHORISED FOR THAT UNIT CATEGORY."; return; }
+    if (normalizeUpgradeIds(squad.upgrades).includes(upgradeId)) { document.getElementById("forceStatus").textContent = "THIS UPGRADE IS ALREADY INSTALLED."; return; }
+
+    squad.upgrades = normalizeUpgradeIds(squad.upgrades);
+    squad.upgrades.push(upgradeId);
+    const total = getForceTotalRP();
+    if (total > Number(campaignSettings.RP_BUDGET)) {
+        squad.upgrades.pop();
+        document.getElementById("forceStatus").textContent = "INSUFFICIENT RP. THIS UPGRADE WOULD EXCEED THE FORCE ALLOCATION.";
+        return;
+    }
+    renderUnits();
+    renderSquadInspector();
+    document.getElementById("forceStatus").textContent = upgrade.upgradeName.toUpperCase() + " APPLIED TO SQUAD.";
+}
+
+function removeUpgradeFromSquad(unitInstanceId, upgradeId) {
+    const squad = currentUnits.find(function(item) { return item.unitInstanceId === unitInstanceId; });
+    if (!squad) return;
+    squad.upgrades = normalizeUpgradeIds(squad.upgrades).filter(function(id) { return id !== upgradeId; });
+    renderUnits();
+    renderSquadInspector();
+    document.getElementById("forceStatus").textContent = "UPGRADE REMOVED FROM SQUAD.";
+}
+
+function selectSquadForInspection(unitInstanceId) {
+    selectedSquadInstanceId = unitInstanceId;
+    renderUnits();
+    renderSquadInspector();
+    const inspector = document.getElementById("squadInspector");
+    if (inspector) inspector.scrollIntoView({ behavior: "smooth", block: "nearest" });
+}
+
+function renderSquadInspector() {
+    const panel = document.getElementById("squadInspector");
+    if (!panel) return;
+    const squad = currentUnits.find(function(item) { return item.unitInstanceId === selectedSquadInstanceId; });
+    if (!squad) { panel.classList.add("hidden"); panel.textContent = ""; return; }
+
+    const unit = getSquadCatalogueUnit(squad);
+    if (!unit) { panel.classList.add("hidden"); panel.textContent = ""; return; }
+    panel.classList.remove("hidden");
+    panel.textContent = "";
+
+    const heading = document.createElement("h3"); heading.textContent = "SQUAD INSPECTION // " + unit.unitName;
+    const meta = document.createElement("p");
+    meta.textContent = unit.unitId + " // " + unit.category + " // INSTANCE " + squad.unitInstanceId;
+    const cost = document.createElement("p");
+    const baseCost = Number(unit.rpCost) || 0;
+    cost.textContent = "BASE COST: " + baseCost + " RP // UPGRADE COST: " + (getSquadCost(squad) - baseCost) + " RP // CURRENT COST: " + getSquadCost(squad) + " RP";
+    panel.append(heading, meta, cost);
+
+    const namingSection = document.createElement("div");
+    namingSection.className = "upgrade-entry";
+    const namingLabel = document.createElement("label");
+    namingLabel.textContent = "UNIT DESIGNATION // CUSTOM SQUAD NAME";
+    namingLabel.style.display = "block";
+    namingLabel.style.marginBottom = "8px";
+    const namingInput = document.createElement("input");
+    namingInput.type = "text";
+    namingInput.maxLength = 40;
+    namingInput.placeholder = unit.unitName.toUpperCase();
+    namingInput.value = squad.customName || "";
+    namingInput.disabled = !campaignSettings.FORCE_EDITING_ENABLED;
+    namingInput.autocomplete = "off";
+    namingInput.setAttribute("aria-label", "Custom squad name");
+    namingInput.style.width = "100%";
+    namingInput.style.boxSizing = "border-box";
+    namingInput.style.marginTop = "6px";
+    namingInput.addEventListener("input", function() {
+        squad.customName = namingInput.value.slice(0, 40);
+        const cardName = document.querySelector('[data-squad-instance="' + squad.unitInstanceId + '"] .force-unit-name');
+        if (cardName) cardName.textContent = "SQUAD // " + (squad.customName.trim() || unit.unitName).toUpperCase();
+    });
+    const namingHint = document.createElement("p");
+    namingHint.textContent = "Leave blank to use the catalogue unit name. Changes are stored when you save your force.";
+    namingHint.className = "workflow-muted";
+    namingSection.append(namingLabel, namingInput, namingHint);
+    panel.appendChild(namingSection);
+
+    const profiles = getSquadProfile(squad);
+    renderSquadProfile(panel, "BASE PROFILE", { base: profiles.base, modified: profiles.base });
+    renderSquadProfile(panel, "CURRENT PROFILE", { base: profiles.base, modified: profiles.modified });
+    if (profiles.warnings && profiles.warnings.length) {
+        const warningHeading = document.createElement("h4");
+        warningHeading.textContent = "UPGRADE VALIDATION WARNINGS";
+        panel.appendChild(warningHeading);
+        profiles.warnings.forEach(function(message) {
+            const warning = document.createElement("p");
+            warning.textContent = "WARNING // " + message;
+            warning.style.color = "#e0b56b";
+            panel.appendChild(warning);
+        });
+    }
+
+    const assignedHeading = document.createElement("h4"); assignedHeading.textContent = "INSTALLED UPGRADES"; panel.appendChild(assignedHeading);
+    const assignedList = document.createElement("div"); assignedList.className = "upgrade-list";
+    const assignedIds = normalizeUpgradeIds(squad.upgrades);
+    if (!assignedIds.length) {
+        const empty = document.createElement("p"); empty.textContent = "NO UPGRADES INSTALLED ON THIS SQUAD."; assignedList.appendChild(empty);
+    } else {
+        assignedIds.forEach(function(upgradeId) {
+            const upgrade = getUpgradeForId(upgradeId);
+            const entry = document.createElement("div"); entry.className = "upgrade-entry";
+            const top = document.createElement("div"); top.className = "upgrade-entry-top";
+            const name = document.createElement("strong"); name.textContent = upgrade ? upgrade.upgradeName : upgradeId;
+            const price = document.createElement("span"); price.className = "upgrade-cost"; price.textContent = (upgrade ? upgrade.rpCost : "?") + " RP";
+            top.append(name, price); entry.appendChild(top);
+            if (upgrade && upgrade.description) { const desc = document.createElement("p"); desc.textContent = upgrade.description; entry.appendChild(desc); }
+            const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "REMOVE UPGRADE"; remove.disabled = !campaignSettings.FORCE_EDITING_ENABLED;
+            remove.onclick = function() { removeUpgradeFromSquad(squad.unitInstanceId, upgradeId); };
+            entry.appendChild(remove); assignedList.appendChild(entry);
+        });
+    }
+    panel.appendChild(assignedList);
+
+    const availableHeading = document.createElement("h4"); availableHeading.textContent = "AVAILABLE UPGRADES // AUTHORISED FOR THIS UNIT"; panel.appendChild(availableHeading);
+    const availableList = document.createElement("div"); availableList.className = "upgrade-list";
+    const available = upgradeCatalogue.filter(function(upgrade) { return isUpgradeApplicable(upgrade, squad); });
+    if (!available.length) {
+        const empty = document.createElement("p"); empty.textContent = "NO UPGRADES ARE CURRENTLY AUTHORISED FOR THIS UNIT."; availableList.appendChild(empty);
+    } else {
+        available.forEach(function(upgrade) {
+            const entry = document.createElement("div"); entry.className = "upgrade-entry";
+            const top = document.createElement("div"); top.className = "upgrade-entry-top";
+            const name = document.createElement("strong"); name.textContent = upgrade.upgradeName + " // " + upgrade.upgradeId;
+            const price = document.createElement("span"); price.className = "upgrade-cost"; price.textContent = upgrade.rpCost + " RP";
+            top.append(name, price); entry.appendChild(top);
+            if (upgrade.description) { const desc = document.createElement("p"); desc.textContent = upgrade.description; entry.appendChild(desc); }
+            const already = assignedIds.includes(upgrade.upgradeId);
+            const button = document.createElement("button"); button.type = "button";
+            button.textContent = already ? "ALREADY INSTALLED" : "APPLY TO THIS SQUAD";
+            button.disabled = already || !campaignSettings.FORCE_EDITING_ENABLED;
+            button.onclick = function() { applyUpgradeToSquad(squad.unitInstanceId, upgrade.upgradeId); };
+            entry.appendChild(button); availableList.appendChild(entry);
+        });
+    }
+    panel.appendChild(availableList);
+
+    const actions = document.createElement("div"); actions.className = "squad-inspector-actions";
+    const close = document.createElement("button"); close.type = "button"; close.textContent = "CLOSE INSPECTION";
+    close.onclick = function() { selectedSquadInstanceId = null; renderSquadInspector(); renderUnits(); };
+    actions.appendChild(close); panel.appendChild(actions);
+}
 
 function readForceDrafts() {
     try { return JSON.parse(localStorage.getItem(forceStorageKey) || "{}"); }
@@ -1436,29 +2125,70 @@ function openCompanyRoster() {
     rosterScreen.classList.remove("hidden");
     workflowPanel.scrollTop = 0;
     statusText.textContent = "COMPANY MUSTER // CENTRAL DATABASE";
+
     const target = document.getElementById("companyRosterContent");
     target.textContent = "RETRIEVING REGISTERED FORCE RECORDS...";
+
     apiGet("getAllForces").then(function(data) {
-        if (!data.success) throw new Error(data.error || "Unable to retrieve company forces.");
+        if (!data.success) {
+            throw new Error(data.error || "Unable to retrieve company forces.");
+        }
+
         target.textContent = "";
         const forces = data.forces || [];
+
         if (!forces.length) {
             target.textContent = "NO PERSONNEL FORCE RECORDS HAVE BEEN SUBMITTED.";
             return;
         }
+
         forces.forEach(function(force) {
-            const block = document.createElement("div"); block.className = "unit-card";
-            const heading = document.createElement("h3"); heading.textContent = (force.playerName || force.personnelId) + " // " + force.personnelId;
+            const block = document.createElement("div");
+            block.className = "unit-card";
+
+            const heading = document.createElement("h3");
+            heading.textContent = (force.playerName || force.personnelId) +
+                " // " + force.personnelId;
             block.appendChild(heading);
-            const summary = document.createElement("p"); summary.textContent = "TOTAL EXPENDITURE: " + force.totalRP + " / " + campaignSettings.RP_BUDGET + " RP // REMAINING: " + force.remainingRP + " RP";
+
+            const summary = document.createElement("p");
+            summary.textContent = "TOTAL EXPENDITURE: " + force.totalRP +
+                " / " + (force.budget || campaignSettings.RP_BUDGET) +
+                " RP // REMAINING: " + force.remainingRP + " RP";
             block.appendChild(summary);
-            (force.units || []).forEach(function(unit) {
-                const line = document.createElement("p"); line.textContent = unit.quantity + " × " + unit.unitName + " — " + unit.subtotal + " RP";
+
+            const squads = force.units || [];
+            if (!squads.length) {
+                const empty = document.createElement("p");
+                empty.textContent = "NO SQUADS REGISTERED.";
+                block.appendChild(empty);
+            }
+
+            squads.forEach(function(squad, index) {
+                const line = document.createElement("p");
+                line.textContent = "SQUAD " + String(index + 1).padStart(2, "0") +
+                    " // " + (squad.unitName || squad.unitId) +
+                    " — " + (squad.subtotal !== undefined ? squad.subtotal : squad.rpCost) + " RP";
                 block.appendChild(line);
+
+                const upgrades = Array.isArray(squad.upgrades) ? squad.upgrades : [];
+                if (upgrades.length) {
+                    const upgradeLine = document.createElement("p");
+                    upgradeLine.className = "force-unit-meta";
+                    upgradeLine.textContent = "UPGRADES: " + upgrades.map(function(upgrade) {
+                        return typeof upgrade === "string"
+                            ? upgrade
+                            : upgrade.upgradeName || upgrade.upgradeId || upgrade.id;
+                    }).join(", ");
+                    block.appendChild(upgradeLine);
+                }
             });
+
             target.appendChild(block);
         });
-    }).catch(function(error) { target.textContent = "DATABASE ERROR: " + error.message; });
+    }).catch(function(error) {
+        target.textContent = "DATABASE ERROR: " + error.message;
+    });
 }
 function openDeploymentMap() {
     hideWorkflowScreens();
@@ -1492,23 +2222,63 @@ function apiGet(action, params) {
 }
 async function loadCatalogueAndForce() {
     try {
-        const results = await Promise.all([apiGet("catalogue"), apiGet("settings")]);
-        if (!results[0].success) throw new Error(results[0].error || "Catalogue retrieval failed.");
+        const results = await Promise.all([
+            apiGet("catalogue"),
+            apiGet("settings"),
+            apiGet("upgrades")
+        ]);
+
+        console.log("Catalogue:", results[0]);
+        console.log("Settings:", results[1]);
+        console.log("Upgrades:", results[2]);
+
+        if (!results[0].success) {
+            throw new Error(results[0].error || "Catalogue retrieval failed.");
+        }
+        if (!results[2].success) {
+            throw new Error(results[2].error || "Upgrade catalogue retrieval failed.");
+        }
+
         catalogueUnits = results[0].units || [];
+        upgradeCatalogue = results[2].upgrades || [];
         campaignSettings = results[1] || campaignSettings;
-        if (!Number.isFinite(Number(campaignSettings.RP_BUDGET))) campaignSettings.RP_BUDGET = 300;
-        const forceResult = await apiGet("getForce", { personnelId: currentPersonnelId });
-        if (!forceResult.success) throw new Error(forceResult.error || "Force retrieval failed.");
-        currentUnits = (forceResult.force.units || []).map(function(unit) { return { unitId: unit.unitId, quantity: Number(unit.quantity) }; });
-        selectedCatalogueUnitId = catalogueUnits.length ? catalogueUnits[0].unitId : null;
+
+        if (!Number.isFinite(Number(campaignSettings.RP_BUDGET))) {
+            campaignSettings.RP_BUDGET = 300;
+        }
+
+        const forceResult = await apiGet("getForce", {
+            personnelId: currentPersonnelId
+        });
+        if (!forceResult.success) {
+            throw new Error(forceResult.error || "Force retrieval failed.");
+        }
+
+        currentUnits = normalizeForceUnits(forceResult.force.units || []);
+        selectedSquadInstanceId = null;
+        selectedCatalogueUnitId = catalogueUnits.length
+            ? catalogueUnits[0].unitId
+            : null;
+
         renderCatalogue();
         renderUnits();
         updateForceBudget();
-        document.getElementById("forceConnectionStatus").textContent = "CENTRAL DATABASE ONLINE // " + catalogueUnits.length + " CATALOGUE ENTRIES AVAILABLE.";
-        if (!campaignSettings.FORCE_EDITING_ENABLED) document.getElementById("forceStatus").textContent = "FORCE EDITING IS CURRENTLY DISABLED BY COMMAND.";
+
+        document.getElementById("forceConnectionStatus").textContent =
+            "CENTRAL DATABASE ONLINE // " + catalogueUnits.length +
+            " CATALOGUE ENTRIES AVAILABLE // " + upgradeCatalogue.length +
+            " UPGRADES AVAILABLE.";
+
+        if (!campaignSettings.FORCE_EDITING_ENABLED) {
+            document.getElementById("forceStatus").textContent =
+                "FORCE EDITING IS CURRENTLY DISABLED BY COMMAND.";
+        }
     } catch (error) {
-        document.getElementById("forceConnectionStatus").textContent = "DATABASE CONNECTION ERROR // " + error.message;
-        document.getElementById("catalogueList").textContent = "CATALOGUE UNAVAILABLE. CHECK THE APPS SCRIPT DEPLOYMENT.";
+        console.error(error);
+        document.getElementById("forceConnectionStatus").textContent =
+            "DATABASE CONNECTION ERROR // " + error.message;
+        document.getElementById("catalogueList").textContent =
+            "CATALOGUE UNAVAILABLE. CHECK THE APPS SCRIPT DEPLOYMENT.";
     }
 }
 function renderCatalogue() {
@@ -1636,113 +2406,205 @@ function renderUnitDetail() {
     const description = document.createElement("div"); description.className = "unit-description";
     renderUnitDescription(description, unit.description || "NO UNIT DESCRIPTION HAS BEEN ENTERED.");
     const quantityRow = document.createElement("div"); quantityRow.className = "quantity-row";
-    const label = document.createElement("label"); label.textContent = "QUANTITY"; label.htmlFor = "selectedUnitQuantity";
+    const label = document.createElement("label"); label.textContent = "NUMBER OF SQUADS"; label.htmlFor = "selectedUnitQuantity";
     const quantity = document.createElement("input"); quantity.type = "number"; quantity.id = "selectedUnitQuantity"; quantity.min = "1"; quantity.step = "1"; quantity.value = "1";
-    const add = document.createElement("button"); add.type = "button"; add.className = "primary"; add.textContent = "ADD TO FORCE";
+    const add = document.createElement("button"); add.type = "button"; add.className = "primary"; add.textContent = "ADD SQUADS TO FORCE";
     add.onclick = function() { addCatalogueUnit(unit.unitId, Number(quantity.value)); };
     quantityRow.append(label, quantity, add);
     panel.append(heading, meta, description, quantityRow);
 }
 function addCatalogueUnit(unitId, quantity) {
     const status = document.getElementById("forceStatus");
-    const unit = catalogueUnits.find(function(item) { return item.unitId === unitId; });
-    if (!unit) { status.textContent = "ERROR: CATALOGUE UNIT NOT FOUND."; return; }
-    if (!Number.isInteger(quantity) || quantity < 1) { status.textContent = "ENTER A VALID QUANTITY."; return; }
-    if (!campaignSettings.FORCE_EDITING_ENABLED) { status.textContent = "FORCE EDITING IS CURRENTLY DISABLED."; return; }
-    const existing = currentUnits.find(function(item) { return item.unitId === unitId; });
-    const newQuantity = (existing ? existing.quantity : 0) + quantity;
-    const proposedTotal = currentUnits.reduce(function(total, item) {
-        const catalogue = catalogueUnits.find(function(entry) { return entry.unitId === item.unitId; });
-        return total + (catalogue ? catalogue.rpCost * (item.unitId === unitId ? newQuantity : item.quantity) : 0);
-    }, 0);
-    if (proposedTotal > Number(campaignSettings.RP_BUDGET)) { status.textContent = "INSUFFICIENT RP. THIS ADDITION WOULD EXCEED THE " + campaignSettings.RP_BUDGET + " RP ALLOCATION."; return; }
-    if (existing) existing.quantity = newQuantity;
-    else currentUnits.push({ unitId: unitId, quantity: quantity });
+    const unit = catalogueUnits.find(function(item) {
+        return item.unitId === unitId;
+    });
+
+    if (!unit) {
+        status.textContent = "ERROR: CATALOGUE UNIT NOT FOUND.";
+        return;
+    }
+    if (!Number.isInteger(quantity) || quantity < 1) {
+        status.textContent = "ENTER A VALID QUANTITY.";
+        return;
+    }
+    if (!campaignSettings.FORCE_EDITING_ENABLED) {
+        status.textContent = "FORCE EDITING IS CURRENTLY DISABLED.";
+        return;
+    }
+
+    const proposedTotal = getForceTotalRP() + (Number(unit.rpCost) * quantity);
+    if (proposedTotal > Number(campaignSettings.RP_BUDGET)) {
+        status.textContent = "INSUFFICIENT RP. THIS ADDITION WOULD EXCEED THE " +
+            campaignSettings.RP_BUDGET + " RP ALLOCATION.";
+        return;
+    }
+
+    for (let i = 0; i < quantity; i++) {
+        currentUnits.push({
+            unitInstanceId: createUnitInstanceId(),
+            unitId: unitId,
+            upgrades: []
+        });
+    }
+
     renderUnits();
-    status.textContent = quantity + " × " + unit.unitName.toUpperCase() + " ADDED TO FORCE.";
+    status.textContent = quantity + " × " + unit.unitName.toUpperCase() +
+        " REGISTERED AS INDIVIDUAL SQUADS.";
 }
+
 function updateForceBudget() {
-    const total = currentUnits.reduce(function(sum, item) {
-        const unit = catalogueUnits.find(function(entry) { return entry.unitId === item.unitId; });
-        return sum + (unit ? unit.rpCost * item.quantity : 0);
-    }, 0);
+    const total = getForceTotalRP();
     const budget = Number(campaignSettings.RP_BUDGET) || 300;
+
     document.getElementById("forceBudget").textContent = budget + " RP";
     document.getElementById("forceTotal").textContent = total + " RP";
     document.getElementById("forceRemaining").textContent = (budget - total) + " RP";
-    document.getElementById("unitCount").textContent = currentUnits.length + " UNIT TYPES REGISTERED";
-    document.getElementById("unitCountBottom").textContent = currentUnits.length + " UNIT TYPES";
+    document.getElementById("unitCount").textContent = currentUnits.length + " SQUADS REGISTERED";
+    document.getElementById("unitCountBottom").textContent = currentUnits.length + " SQUADS";
 }
+
 function renderUnits() {
     const list = document.getElementById("unitList");
     if (!list) return;
+
     list.textContent = "";
     if (!currentUnits.length) {
-        const empty = document.createElement("p"); empty.className = "workflow-muted"; empty.textContent = "NO UNITS REGISTERED. SELECT FORMATIONS FROM THE CATALOGUE ABOVE."; list.appendChild(empty);
+        selectedSquadInstanceId = null;
+        const empty = document.createElement("p");
+        empty.className = "workflow-muted";
+        empty.textContent = "NO SQUADS REGISTERED. SELECT FORMATIONS FROM THE CATALOGUE ABOVE.";
+        list.appendChild(empty);
     }
-    currentUnits.forEach(function(item) {
-        const unit = catalogueUnits.find(function(entry) { return entry.unitId === item.unitId; });
+
+    currentUnits.forEach(function(squad, index) {
+        const unit = getSquadCatalogueUnit(squad);
         if (!unit) return;
-        const card = document.createElement("div"); card.className = "unit-card";
-        const line = document.createElement("div"); line.className = "force-line";
+
+        const card = document.createElement("div");
+        card.className = "unit-card" + (squad.unitInstanceId === selectedSquadInstanceId ? " selected-squad" : "");
+        card.setAttribute("data-squad-instance", squad.unitInstanceId);
+        const line = document.createElement("div");
+        line.className = "force-line";
         const info = document.createElement("div");
-        const name = document.createElement("div"); name.className = "force-unit-name"; name.textContent = item.quantity + " × " + unit.unitName;
-        const meta = document.createElement("div"); meta.className = "force-unit-meta"; meta.textContent = unit.category + " // " + unit.rpCost + " RP EACH";
+
+        const name = document.createElement("div");
+        name.className = "force-unit-name";
+        name.textContent = "SQUAD " + String(index + 1).padStart(2, "0") + " // " + (squad.customName && squad.customName.trim() ? squad.customName.trim().toUpperCase() : unit.unitName);
+
+        const meta = document.createElement("div");
+        meta.className = "force-unit-meta";
+        meta.textContent = unit.category + " // " + unit.unitId + " // " + unit.rpCost + " RP BASE";
         info.append(name, meta);
-        const actions = document.createElement("div"); actions.className = "force-line-actions";
-        const minus = document.createElement("button"); minus.type = "button"; minus.textContent = "−"; minus.title = "Remove one"; minus.onclick = function() { changeUnitQuantity(item.unitId, -1); };
-        const plus = document.createElement("button"); plus.type = "button"; plus.textContent = "+"; plus.title = "Add one"; plus.onclick = function() { changeUnitQuantity(item.unitId, 1); };
-        const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "REMOVE"; remove.onclick = function() { currentUnits = currentUnits.filter(function(entry) { return entry.unitId !== item.unitId; }); renderUnits(); };
-        const subtotal = document.createElement("span"); subtotal.className = "force-rp"; subtotal.textContent = (unit.rpCost * item.quantity) + " RP";
-        actions.append(minus, plus, remove, subtotal); line.append(info, actions); card.appendChild(line); list.appendChild(card);
+
+        const upgradeNames = getSquadUpgradeNames(squad);
+        if (upgradeNames.length) {
+            const upgrades = document.createElement("div");
+            upgrades.className = "force-unit-meta";
+            upgrades.textContent = "UPGRADES: " + upgradeNames.join(", ");
+            info.appendChild(upgrades);
+        }
+
+        const actions = document.createElement("div");
+        actions.className = "force-line-actions";
+        const inspect = document.createElement("button");
+        inspect.type = "button";
+        inspect.textContent = squad.unitInstanceId === selectedSquadInstanceId ? "INSPECTING" : "INSPECT";
+        inspect.onclick = function() { selectSquadForInspection(squad.unitInstanceId); };
+
+        const remove = document.createElement("button");
+        remove.type = "button";
+        remove.textContent = "REMOVE";
+        remove.title = "Remove this individual squad";
+        remove.onclick = function() {
+            currentUnits = currentUnits.filter(function(entry) { return entry.unitInstanceId !== squad.unitInstanceId; });
+            if (selectedSquadInstanceId === squad.unitInstanceId) selectedSquadInstanceId = null;
+            renderUnits();
+        };
+
+        const subtotal = document.createElement("span");
+        subtotal.className = "force-rp";
+        subtotal.textContent = getSquadCost(squad) + " RP";
+        actions.append(inspect, remove, subtotal);
+        line.append(info, actions);
+        card.appendChild(line);
+        list.appendChild(card);
     });
+
     updateForceBudget();
+    renderSquadInspector();
 }
-function changeUnitQuantity(unitId, delta) {
-    const item = currentUnits.find(function(entry) { return entry.unitId === unitId; });
-    if (!item) return;
-    const next = item.quantity + delta;
-    if (next <= 0) currentUnits = currentUnits.filter(function(entry) { return entry.unitId !== unitId; });
-    else {
-        const unit = catalogueUnits.find(function(entry) { return entry.unitId === unitId; });
-        const total = currentUnits.reduce(function(sum, entry) {
-            const catalogue = catalogueUnits.find(function(candidate) { return candidate.unitId === entry.unitId; });
-            return sum + (catalogue ? catalogue.rpCost * (entry.unitId === unitId ? next : entry.quantity) : 0);
-        }, 0);
-        if (total > Number(campaignSettings.RP_BUDGET)) { document.getElementById("forceStatus").textContent = "INSUFFICIENT RP FOR ADDITIONAL QUANTITY."; return; }
-        item.quantity = next;
-    }
-    renderUnits();
-}
+
 async function saveForceDraft() {
     const status = document.getElementById("saveStatus");
-    if (!currentPersonnelId) { status.textContent = "ERROR: PERSONNEL IDENTITY NOT SET."; return; }
-    if (!campaignSettings.FORCE_EDITING_ENABLED) { status.textContent = "FORCE EDITING IS CURRENTLY DISABLED."; return; }
-    const total = currentUnits.reduce(function(sum, item) {
-        const unit = catalogueUnits.find(function(entry) { return entry.unitId === item.unitId; });
-        return sum + (unit ? unit.rpCost * item.quantity : 0);
-    }, 0);
-    if (total > Number(campaignSettings.RP_BUDGET)) { status.textContent = "SAVE REJECTED: FORCE EXCEEDS RP ALLOCATION."; return; }
+
+    if (!currentPersonnelId) {
+        status.textContent = "ERROR: PERSONNEL IDENTITY NOT SET.";
+        return;
+    }
+    if (!campaignSettings.FORCE_EDITING_ENABLED) {
+        status.textContent = "FORCE EDITING IS CURRENTLY DISABLED.";
+        return;
+    }
+
+    const total = getForceTotalRP();
+    if (total > Number(campaignSettings.RP_BUDGET)) {
+        status.textContent = "SAVE REJECTED: FORCE EXCEEDS RP ALLOCATION.";
+        return;
+    }
+
     status.textContent = "TRANSMITTING FORCE RECORD TO CENTRAL DATABASE...";
+
     try {
-        // text/plain avoids a browser CORS preflight. The Apps Script parses the JSON body.
+        const forcePayload = {
+            action: "saveForce",
+            personnelId: currentPersonnelId,
+            playerName: currentPlayerName,
+            units: currentUnits.map(function(squad) {
+                return {
+                    unitInstanceId: squad.unitInstanceId,
+                    unitId: squad.unitId,
+                    customName: String(squad.customName || "").trim().slice(0, 40),
+                    upgrades: normalizeUpgradeIds(squad.upgrades)
+                };
+            })
+        };
+
         await fetch(FREEDOM_API_URL, {
             method: "POST",
             mode: "no-cors",
             headers: { "Content-Type": "text/plain;charset=utf-8" },
-            body: JSON.stringify({ action: "saveForce", personnelId: currentPersonnelId, playerName: currentPlayerName, units: currentUnits })
+            body: JSON.stringify(forcePayload)
         });
-        // Verify by reading the saved record back through the JSONP endpoint.
+
         await new Promise(function(resolve) { setTimeout(resolve, 1200); });
-        const check = await apiGet("getForce", { personnelId: currentPersonnelId });
-        if (!check.success) throw new Error(check.error || "Save verification failed.");
-        const savedUnits = check.force.units || [];
-        const matches = savedUnits.length === currentUnits.length && currentUnits.every(function(item) {
-            const saved = savedUnits.find(function(entry) { return entry.unitId === item.unitId; });
-            return saved && Number(saved.quantity) === Number(item.quantity);
+
+        const check = await apiGet("getForce", {
+            personnelId: currentPersonnelId
         });
-        if (!matches) throw new Error("The database did not return the submitted force. Check the Apps Script deployment and sheet permissions.");
-        status.textContent = "FORCE RECORD SAVED AND VERIFIED // " + check.force.totalRP + " RP COMMITTED.";
+        if (!check.success) {
+            throw new Error(check.error || "Save verification failed.");
+        }
+
+        const savedUnits = normalizeForceUnits(check.force.units || []);
+        const matches = savedUnits.length === currentUnits.length &&
+            currentUnits.every(function(squad) {
+                const saved = savedUnits.find(function(entry) {
+                    return entry.unitInstanceId === squad.unitInstanceId;
+                });
+                if (!saved || saved.unitId !== squad.unitId) return false;
+
+                const submittedUpgrades = normalizeUpgradeIds(squad.upgrades).slice().sort();
+                const savedUpgrades = normalizeUpgradeIds(saved.upgrades).slice().sort();
+                return JSON.stringify(submittedUpgrades) === JSON.stringify(savedUpgrades) &&
+                    String(saved.customName || "") === String(squad.customName || "").trim().slice(0, 40);
+            });
+
+        if (!matches) {
+            throw new Error("The database did not return the submitted force. Check the Apps Script deployment and sheet permissions.");
+        }
+
+        status.textContent = "FORCE RECORD SAVED AND VERIFIED // " +
+            check.force.totalRP + " RP COMMITTED.";
     } catch (error) {
         status.textContent = "DATABASE SAVE ERROR // " + error.message;
     }
