@@ -1140,7 +1140,12 @@ function typeNextCharacter() {
         return;
     }
 
-    typingTimer = setTimeout(typeNextCharacter, introTypingSlow ? 85 : 32);
+    /* The same slider controls both archive scrolling and character reveal.
+       At the default setting (3), preserve the existing typing pace.
+       Higher settings type faster; lower settings type more slowly. */
+    const speed = Math.max(1, Number(speedSlider.value) || 1);
+    const typingDelay = (introTypingSlow ? 255 : 96) / speed;
+    typingTimer = setTimeout(typeNextCharacter, typingDelay);
 }
 
 /* Finish displaying the full document, then switch to ordinary scrolling. */
@@ -1379,13 +1384,25 @@ function normalizeUpgradeIds(upgrades) {
     }).filter(Boolean);
 }
 
+function normalizeUpgradeRecords(upgrades) {
+    if (!Array.isArray(upgrades)) return [];
+    return upgrades.map(function(upgrade) {
+        if (typeof upgrade === "string") return { upgradeId: upgrade, weaponProfile: "" };
+        if (!upgrade) return null;
+        return {
+            upgradeId: String(upgrade.upgradeId || upgrade.id || ""),
+            weaponProfile: String(upgrade.weaponProfile || "")
+        };
+    }).filter(function(item) { return item && item.upgradeId; });
+}
+
 // Convert older quantity-based records and newer individual records
 // into the individual squad format used by this version of the terminal.
 function normalizeForceUnits(units) {
     const normalized = [];
 
     (units || []).forEach(function(unit) {
-        const upgrades = normalizeUpgradeIds(unit.upgrades);
+        const upgrades = normalizeUpgradeRecords(unit.upgrades);
 
         if (unit.unitInstanceId) {
             normalized.push({
@@ -1425,10 +1442,10 @@ function getSquadCost(squad) {
     if (!unit) return 0;
 
     const baseCost = Number(unit.rpCost) || 0;
-    const upgradeCost = normalizeUpgradeIds(squad.upgrades).reduce(
-        function(total, upgradeId) {
+    const upgradeCost = normalizeUpgradeRecords(squad.upgrades).reduce(
+        function(total, assignment) {
             const upgrade = upgradeCatalogue.find(function(entry) {
-                return entry.upgradeId === upgradeId;
+                return entry.upgradeId === assignment.upgradeId;
             });
             return total + (upgrade ? Number(upgrade.rpCost) || 0 : 0);
         },
@@ -1500,11 +1517,72 @@ function getDescriptionTables(source) {
     return tables;
 }
 
+// Some catalogue entries use a plain-text table copied from a spreadsheet:
+// each column heading is on its own line, followed by each weapon's values
+// in the same order. Support that format as well as Markdown and tab tables.
+function getStackedWeaponTable(source) {
+    const lines = String(source || "").replace(/\r/g, "").split("\n").map(function(line) { return cleanProfileCell(line); });
+    let sectionStart = -1;
+    for (let i = 0; i < lines.length; i++) {
+        if (/^weapons\s*:?$/i.test(lines[i].trim())) { sectionStart = i + 1; break; }
+    }
+    if (sectionStart === -1) return null;
+
+    // Read the column headings as consecutive non-empty lines. This is the
+    // plain-text layout produced when a table is copied from a spreadsheet.
+    const headers = [];
+    let dataStart = -1;
+    const knownHeaders = ["weapon", "weapons", "attack", "aim", "pen", "damage", "range", "weaponkeywords", "keywords"];
+    for (let i = sectionStart; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        const key = profileHeaderKey(line);
+        if (knownHeaders.includes(key)) {
+            headers.push(line);
+            if (key === "weaponkeywords" || (key === "keywords" && headers.some(function(header) { return profileHeaderKey(header) === "weapon"; }))) {
+                dataStart = i + 1;
+                break;
+            }
+        } else {
+            break;
+        }
+    }
+    if (dataStart === -1 || !headers.some(function(header) { return ["weapon", "weapons"].includes(profileHeaderKey(header)); })) return null;
+
+    const values = [];
+    for (let i = dataStart; i < lines.length; i++) {
+        const line = lines[i].trim();
+        if (!line) continue;
+        if (/^keywords\s*:/i.test(line) || /^(statistics|special rules|equipment)\s*:?$/i.test(line)) break;
+        // Do not mistake a prose explanation after the table for another cell.
+        if (values.length % headers.length === 0 && /^[A-Za-z][A-Za-z -]{1,40};\s+/.test(line)) break;
+        values.push(line);
+    }
+
+    const rows = [];
+    for (let i = 0; i + headers.length <= values.length; i += headers.length) {
+        rows.push(values.slice(i, i + headers.length));
+    }
+    return rows.length ? { headers: headers, rows: rows } : null;
+}
+
 function parseUnitProfile(description) {
     const profile = { stats: {}, weapons: [], keywords: [], keywordDescriptions: {} };
     const tables = getDescriptionTables(description);
 
-    tables.forEach(function(table) {
+    const profileTables = tables.slice();
+    const stackedWeaponTable = getStackedWeaponTable(description);
+    const existingWeaponTableIndex = profileTables.findIndex(function(table) {
+        return table.headers.some(function(header) { return ["weapon", "weapons"].includes(profileHeaderKey(header)); });
+    });
+    if (stackedWeaponTable) {
+        if (existingWeaponTableIndex === -1) profileTables.push(stackedWeaponTable);
+        else if (stackedWeaponTable.rows.length > profileTables[existingWeaponTableIndex].rows.length) {
+            profileTables[existingWeaponTableIndex] = stackedWeaponTable;
+        }
+    }
+
+    profileTables.forEach(function(table) {
         const keys = table.headers.map(profileHeaderKey);
         const statColumn = keys.findIndex(function(key) { return key === "statistic" || key === "stat"; });
         const valueColumn = keys.findIndex(function(key) { return key === "value"; });
@@ -1527,7 +1605,7 @@ function parseUnitProfile(description) {
                     if (!key) return;
                     if (key === "weapon" || key === "weapons") weapon.name = cleanProfileCell(row[index]);
                     else if (key === "attack" || key === "aim" || key === "pen" || key === "damage" || key === "range") weapon[key] = cleanProfileCell(row[index]);
-                    else if (key === "keywords") weapon.keywords = cleanProfileCell(row[index]).split(/[,;]/).map(function(item) { return item.trim(); }).filter(Boolean);
+                    else if (key === "keywords" || key === "weaponkeywords") weapon.keywords = cleanProfileCell(row[index]).split(/[,;]/).map(function(item) { return item.trim(); }).filter(Boolean);
                     else weapon[key] = cleanProfileCell(row[index]);
                 });
                 if (weapon.name) profile.weapons.push(weapon);
@@ -1543,6 +1621,7 @@ function parseUnitProfile(description) {
             const upper = lines[i].replace(/:$/, "").toUpperCase();
             if (upper === "STATISTICS" || upper === "STATISTIC") { inStats = true; continue; }
             if (inStats && ["WEAPONS", "KEYWORDS", "EQUIPMENT", "SPECIAL RULES"].includes(upper)) break;
+            if (inStats && ["STATISTIC", "VALUE"].includes(lines[i].replace(/:$/, "").toUpperCase())) continue;
             if (inStats && lines[i] && lines[i + 1]) {
                 const stat = lines[i].replace(/\*\*/g, "").trim().toUpperCase();
                 const value = lines[i + 1].trim();
@@ -1669,6 +1748,21 @@ function findWeaponIndex(weapons, weaponName) {
     });
 }
 
+// Weapon quantities are authored in catalogue names (for example, "Assault Rifles ×6").
+// This helper safely reads that suffix and writes an updated quantity while preserving
+// the weapon's original display name and multiplication-symbol style.
+function adjustWeaponNameQuantity(weapon, amount) {
+    const originalName = String(weapon && weapon.name || "").trim();
+    const match = originalName.match(/^(.*?)(\s*[×x]\s*)(\d+)\s*$/i);
+    const baseName = match ? match[1].trim() : originalName;
+    const separator = match ? match[2] : " ×";
+    const currentQuantity = match ? Number(match[3]) : 1;
+    const nextQuantity = currentQuantity + Number(amount);
+    if (!baseName || !Number.isInteger(nextQuantity) || nextQuantity < 0) return false;
+    weapon.name = baseName + separator.trimEnd() + String(nextQuantity);
+    return true;
+}
+
 function applyUpgradeEffectsToProfile(baseProfile, upgrades) {
     const profile = cloneUnitProfile(baseProfile);
     profile.warnings = [];
@@ -1695,6 +1789,29 @@ function applyUpgradeEffectsToProfile(baseProfile, upgrades) {
                 Object.keys(profile.keywordDescriptions || {}).forEach(function(item) {
                     if (item.toLowerCase() === keyword) delete profile.keywordDescriptions[item];
                 });
+            } else if (type === "modify_default_weapon_quantity") {
+                const amount = Number(effect.value);
+                if (profile.weapons.length && Number.isInteger(amount) && amount > 0) {
+                    if (!adjustWeaponNameQuantity(profile.weapons[0], amount)) {
+                        profile.warnings.push(upgrade.upgradeName + ": COULD NOT UPDATE THE DEFAULT WEAPON QUANTITY.");
+                    }
+                } else {
+                    profile.warnings.push(upgrade.upgradeName + ": DEFAULT WEAPON QUANTITY EFFECT REQUIRES A DEFAULT WEAPON AND A POSITIVE WHOLE NUMBER.");
+                }
+            } else if (type === "improve_weapon_aim") {
+                const targetName = String(upgrade.weaponProfile || "").trim().toLowerCase();
+                const target = profile.weapons.find(function(weapon) { return String(weapon.name || "").trim().toLowerCase() === targetName; });
+                if (!target) {
+                    profile.warnings.push(upgrade.upgradeName + ": SELECTED WEAPON PROFILE WAS NOT FOUND.");
+                } else {
+                    const aimMatch = String(target.aim || "").match(/^\s*(\d+)\s*\+\s*$/);
+                    if (!aimMatch) profile.warnings.push(upgrade.upgradeName + ": SELECTED WEAPON HAS AN INVALID AIM VALUE.");
+                    else {
+                        const currentAim = Number(aimMatch[1]);
+                        const improvement = Math.max(1, Number(effect.value) || 1);
+                        target.aim = Math.max(2, currentAim - improvement) + "+";
+                    }
+                }
             } else if (type === "add_weapon") {
                 if (effect.weapon && effect.weapon.name) {
                     const newWeapon = Object.assign({}, effect.weapon);
@@ -1748,11 +1865,31 @@ function isUpgradeApplicable(upgrade, squad) {
     return applies.includes("*") || applies.includes(String(unit.category || "").toLowerCase()) || applies.includes(String(unit.unitId || "").toLowerCase());
 }
 
+function getImprovedOpticsWeaponOptions(squad) {
+    const profile = parseUnitProfile((getSquadCatalogueUnit(squad) || {}).description || "");
+    const alreadyTargeted = normalizeUpgradeRecords(squad.upgrades).filter(function(assignment) {
+        const upgrade = getUpgradeForId(assignment.upgradeId);
+        return upgrade && (upgrade.effects || []).some(function(effect) { return String(effect.type || "").toLowerCase() === "improve_weapon_aim"; });
+    }).map(function(assignment) { return assignment.weaponProfile.toLowerCase(); });
+    return profile.weapons.filter(function(weapon) {
+        const aim = String(weapon.aim || "").match(/^\s*(\d+)\s*\+\s*$/);
+        const keywords = normalizeProfileKeywords(weapon.keywords).map(function(item) { return item.toLowerCase(); });
+        return aim && Number(aim[1]) > 2 && !keywords.includes("self-guided") && !alreadyTargeted.includes(String(weapon.name || "").toLowerCase());
+    });
+}
+
+function upgradeRequiresWeaponSelection(upgrade) {
+    return !!upgrade && (upgrade.effects || []).some(function(effect) { return String(effect.type || "").toLowerCase() === "improve_weapon_aim"; });
+}
+
 function getSquadProfile(squad) {
     const unit = getSquadCatalogueUnit(squad);
     if (!unit) return { base: { stats: {}, weapons: [], keywords: [] }, modified: { stats: {}, weapons: [], keywords: [] } };
     const base = parseUnitProfile(unit.description || "");
-    const assigned = normalizeUpgradeIds(squad.upgrades).map(getUpgradeForId).filter(Boolean);
+    const assigned = normalizeUpgradeRecords(squad.upgrades).map(function(assignment) {
+        const upgrade = getUpgradeForId(assignment.upgradeId);
+        return upgrade ? Object.assign({}, upgrade, { weaponProfile: assignment.weaponProfile }) : null;
+    }).filter(Boolean);
     const modified = applyUpgradeEffectsToProfile(base, assigned);
     return { base: base, modified: modified, warnings: modified.warnings || [] };
 }
@@ -1861,16 +1998,21 @@ function renderSquadProfile(container, title, profile) {
     }
 }
 
-function applyUpgradeToSquad(unitInstanceId, upgradeId) {
+function applyUpgradeToSquad(unitInstanceId, upgradeId, weaponProfile) {
     const squad = currentUnits.find(function(item) { return item.unitInstanceId === unitInstanceId; });
     const upgrade = getUpgradeForId(upgradeId);
     if (!squad || !upgrade) return;
     if (!campaignSettings.FORCE_EDITING_ENABLED) { document.getElementById("forceStatus").textContent = "FORCE EDITING IS CURRENTLY DISABLED."; return; }
     if (!isUpgradeApplicable(upgrade, squad)) { document.getElementById("forceStatus").textContent = "THIS UPGRADE IS NOT AUTHORISED FOR THAT UNIT CATEGORY."; return; }
-    if (normalizeUpgradeIds(squad.upgrades).includes(upgradeId)) { document.getElementById("forceStatus").textContent = "THIS UPGRADE IS ALREADY INSTALLED."; return; }
-
-    squad.upgrades = normalizeUpgradeIds(squad.upgrades);
-    squad.upgrades.push(upgradeId);
+    const needsWeapon = upgradeRequiresWeaponSelection(upgrade);
+    if (needsWeapon && !weaponProfile) { document.getElementById("forceStatus").textContent = "SELECT AN ELIGIBLE WEAPON PROFILE FIRST."; return; }
+    if (!needsWeapon && normalizeUpgradeIds(squad.upgrades).includes(upgradeId)) { document.getElementById("forceStatus").textContent = "THIS UPGRADE IS ALREADY INSTALLED."; return; }
+    const assignments = normalizeUpgradeRecords(squad.upgrades);
+    if (needsWeapon && assignments.some(function(item) { return item.weaponProfile.toLowerCase() === String(weaponProfile).toLowerCase(); })) {
+        document.getElementById("forceStatus").textContent = "THIS WEAPON PROFILE ALREADY HAS IMPROVED OPTICS."; return;
+    }
+    squad.upgrades = assignments;
+    squad.upgrades.push({ upgradeId: upgradeId, weaponProfile: needsWeapon ? weaponProfile : "" });
     const total = getForceTotalRP();
     if (total > Number(campaignSettings.RP_BUDGET)) {
         squad.upgrades.pop();
@@ -1885,7 +2027,7 @@ function applyUpgradeToSquad(unitInstanceId, upgradeId) {
 function removeUpgradeFromSquad(unitInstanceId, upgradeId) {
     const squad = currentUnits.find(function(item) { return item.unitInstanceId === unitInstanceId; });
     if (!squad) return;
-    squad.upgrades = normalizeUpgradeIds(squad.upgrades).filter(function(id) { return id !== upgradeId; });
+    squad.upgrades = normalizeUpgradeRecords(squad.upgrades).filter(function(assignment) { return assignment.upgradeId !== upgradeId; });
     renderUnits();
     renderSquadInspector();
     document.getElementById("forceStatus").textContent = "UPGRADE REMOVED FROM SQUAD.";
@@ -1963,11 +2105,13 @@ function renderSquadInspector() {
 
     const assignedHeading = document.createElement("h4"); assignedHeading.textContent = "INSTALLED UPGRADES"; panel.appendChild(assignedHeading);
     const assignedList = document.createElement("div"); assignedList.className = "upgrade-list";
+    const assignedRecords = normalizeUpgradeRecords(squad.upgrades);
     const assignedIds = normalizeUpgradeIds(squad.upgrades);
-    if (!assignedIds.length) {
+    if (!assignedRecords.length) {
         const empty = document.createElement("p"); empty.textContent = "NO UPGRADES INSTALLED ON THIS SQUAD."; assignedList.appendChild(empty);
     } else {
-        assignedIds.forEach(function(upgradeId) {
+        assignedRecords.forEach(function(assignment, assignmentIndex) {
+            const upgradeId = assignment.upgradeId;
             const upgrade = getUpgradeForId(upgradeId);
             const entry = document.createElement("div"); entry.className = "upgrade-entry";
             const top = document.createElement("div"); top.className = "upgrade-entry-top";
@@ -1975,8 +2119,9 @@ function renderSquadInspector() {
             const price = document.createElement("span"); price.className = "upgrade-cost"; price.textContent = (upgrade ? upgrade.rpCost : "?") + " RP";
             top.append(name, price); entry.appendChild(top);
             if (upgrade && upgrade.description) { const desc = document.createElement("p"); desc.textContent = upgrade.description; entry.appendChild(desc); }
+            if (assignment.weaponProfile) { const target = document.createElement("p"); target.textContent = "WEAPON PROFILE: " + assignment.weaponProfile; entry.appendChild(target); }
             const remove = document.createElement("button"); remove.type = "button"; remove.textContent = "REMOVE UPGRADE"; remove.disabled = !campaignSettings.FORCE_EDITING_ENABLED;
-            remove.onclick = function() { removeUpgradeFromSquad(squad.unitInstanceId, upgradeId); };
+            remove.onclick = function() { squad.upgrades = normalizeUpgradeRecords(squad.upgrades).filter(function(item, index) { return index !== assignmentIndex; }); renderUnits(); renderSquadInspector(); document.getElementById("forceStatus").textContent = "UPGRADE REMOVED FROM SQUAD."; };
             entry.appendChild(remove); assignedList.appendChild(entry);
         });
     }
@@ -1997,9 +2142,22 @@ function renderSquadInspector() {
             if (upgrade.description) { const desc = document.createElement("p"); desc.textContent = upgrade.description; entry.appendChild(desc); }
             const already = assignedIds.includes(upgrade.upgradeId);
             const button = document.createElement("button"); button.type = "button";
-            button.textContent = already ? "ALREADY INSTALLED" : "APPLY TO THIS SQUAD";
-            button.disabled = already || !campaignSettings.FORCE_EDITING_ENABLED;
-            button.onclick = function() { applyUpgradeToSquad(squad.unitInstanceId, upgrade.upgradeId); };
+            if (upgradeRequiresWeaponSelection(upgrade)) {
+                const options = getImprovedOpticsWeaponOptions(squad);
+                const select = document.createElement("select");
+                select.style.width = "100%"; select.style.margin = "8px 0";
+                const placeholder = document.createElement("option"); placeholder.value = ""; placeholder.textContent = options.length ? "SELECT WEAPON PROFILE" : "NO ELIGIBLE WEAPON PROFILES"; select.appendChild(placeholder);
+                options.forEach(function(weapon) { const option = document.createElement("option"); option.value = weapon.name; option.textContent = weapon.name + " // AIM " + weapon.aim; select.appendChild(option); });
+                select.disabled = !campaignSettings.FORCE_EDITING_ENABLED || !options.length;
+                entry.appendChild(select);
+                button.textContent = "INSTALL FOR SELECTED WEAPON";
+                button.disabled = !campaignSettings.FORCE_EDITING_ENABLED || !options.length;
+                button.onclick = function() { applyUpgradeToSquad(squad.unitInstanceId, upgrade.upgradeId, select.value); };
+            } else {
+                button.textContent = already ? "ALREADY INSTALLED" : "APPLY TO THIS SQUAD";
+                button.disabled = already || !campaignSettings.FORCE_EDITING_ENABLED;
+                button.onclick = function() { applyUpgradeToSquad(squad.unitInstanceId, upgrade.upgradeId); };
+            }
             entry.appendChild(button); availableList.appendChild(entry);
         });
     }
@@ -2391,7 +2549,17 @@ function renderUnitDescription(container, source) {
                 while (i < lines.length && lines[i] && !sectionHeading(lines[i])) { headers.push(cleanCell(lines[i])); i++; if (headers.length >= 7) break; }
                 const values = [];
                 while (i < lines.length && lines[i] && !sectionHeading(lines[i])) { values.push(cleanCell(lines[i])); i++; }
-                if (headers.length && values.length) appendTable(headers, [values]);
+
+                // Flattened Google Sheets tables list each cell on its own line.
+                // Split the values into complete rows instead of treating the
+                // entire weapon list as one row.
+                if (headers.length && values.length) {
+                    const rows = [];
+                    for (let valueIndex = 0; valueIndex + headers.length <= values.length; valueIndex += headers.length) {
+                        rows.push(values.slice(valueIndex, valueIndex + headers.length));
+                    }
+                    appendTable(headers, rows);
+                }
                 continue;
             }
             continue;
@@ -2571,7 +2739,7 @@ async function saveForceDraft() {
                     unitInstanceId: squad.unitInstanceId,
                     unitId: squad.unitId,
                     customName: String(squad.customName || "").trim().slice(0, 40),
-                    upgrades: normalizeUpgradeIds(squad.upgrades)
+                    upgrades: normalizeUpgradeRecords(squad.upgrades)
                 };
             })
         };
@@ -2600,8 +2768,8 @@ async function saveForceDraft() {
                 });
                 if (!saved || saved.unitId !== squad.unitId) return false;
 
-                const submittedUpgrades = normalizeUpgradeIds(squad.upgrades).slice().sort();
-                const savedUpgrades = normalizeUpgradeIds(saved.upgrades).slice().sort();
+                const submittedUpgrades = normalizeUpgradeRecords(squad.upgrades).map(function(item) { return item.upgradeId + "::" + item.weaponProfile; }).sort();
+                const savedUpgrades = normalizeUpgradeRecords(saved.upgrades).map(function(item) { return item.upgradeId + "::" + item.weaponProfile; }).sort();
                 return JSON.stringify(submittedUpgrades) === JSON.stringify(savedUpgrades) &&
                     String(saved.customName || "") === String(squad.customName || "").trim().slice(0, 40);
             });
