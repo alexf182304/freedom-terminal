@@ -730,6 +730,20 @@ input[type="range"] {
   .deployment-map-status { text-align:left; }
 }
 
+
+.workflow-shell:has(#deploymentScreen:not(.hidden)) { max-width:none; width:100%; }
+#deploymentScreen .deployment-map-layout { display:block; }
+#deploymentScreen .deployment-map-stage { aspect-ratio:2048 / 1544; }
+#deploymentScreen .deployment-map-stage img { height:100%; object-fit:contain; }
+#deploymentScreen .deployment-floating { position:absolute; z-index:10; width:min(330px, 94%); box-sizing:border-box; background:#071107; box-shadow:0 8px 30px #000; line-height:1.5; cursor:default; }
+#deploymentScreen .deployment-floating.hidden { display:none !important; }
+.deployment-dragbar { display:flex; align-items:center; justify-content:space-between; gap:8px; cursor:move; touch-action:none; margin-bottom:10px; }
+.deployment-dragbar h2 { margin:0; font-size:16px; }
+.deployment-dragbar button { padding:3px 10px; min-height:0; }
+#deploymentScreen .deployment-personnel-list { grid-template-columns:repeat(auto-fit,minmax(180px,1fr)); }
+#deploymentScreen .deployment-control-panel { margin-top:12px; }
+#deploymentScreen .deployment-floating { margin-top:0; }
+
 </style>
 </head>
 
@@ -1055,6 +1069,21 @@ input[type="range"] {
                                             <g id="deploymentZoneCells"></g><g id="deploymentOtherMarkers"></g>
                                             <g id="deploymentSelectedMarker"></g>
                                         </svg>
+                            <aside id="deploymentFloating" class="deployment-control-panel deployment-floating hidden">
+                                <div class="deployment-dragbar" id="deploymentDragbar"><h2>02 // LANDING ASSIGNMENT</h2><button type="button" aria-label="Close landing assignment" onclick="clearDeploymentSelection()">×</button></div>
+                                <div class="deployment-coordinate-card">
+                                    <span class="workflow-muted">PROPOSED LANDING POSITION</span>
+                                    <strong id="deploymentCoordinate">NO POSITION SELECTED</strong>
+                                    <span class="workflow-muted" id="deploymentSelectionHint">Select a highlighted deployment hex.</span>
+                                </div>
+                                <div class="workflow-status" id="deploymentStatus" aria-live="polite">AWAITING LANDING POSITION.</div>
+                                <div class="workflow-actions deployment-actions">
+                                    <button type="button" class="primary" id="confirmDeploymentButton" onclick="saveDeploymentSelection()" disabled>CONFIRM DEPLOYMENT</button>
+                                    <button type="button" id="clearDeploymentButton" onclick="clearDeploymentSelection()" disabled>CLEAR SELECTION</button>
+
+                                </div>
+
+</aside>
                                     </div>
                                 </div>
                                 <div class="deployment-map-legend">
@@ -1065,23 +1094,10 @@ input[type="range"] {
                                 <p class="workflow-muted deployment-map-help">SELECT A HIGHLIGHTED HEX IN ZONES A–E. YOUR SELECTION IS NOT SAVED UNTIL YOU CONFIRM IT.</p>
                             </div>
 
-                            <aside class="deployment-control-panel">
-                                <h2>02 // LANDING ASSIGNMENT</h2>
-                                <div class="deployment-coordinate-card">
-                                    <span class="workflow-muted">PROPOSED LANDING POSITION</span>
-                                    <strong id="deploymentCoordinate">NO POSITION SELECTED</strong>
-                                    <span class="workflow-muted" id="deploymentSelectionHint">Select a highlighted deployment hex.</span>
-                                </div>
-                                <div class="workflow-status" id="deploymentStatus" aria-live="polite">AWAITING LANDING POSITION.</div>
-                                <div class="workflow-actions deployment-actions">
-                                    <button type="button" class="primary" id="confirmDeploymentButton" onclick="saveDeploymentSelection()" disabled>CONFIRM DEPLOYMENT</button>
-                                    <button type="button" id="clearDeploymentButton" onclick="clearDeploymentSelection()" disabled>CLEAR SELECTION</button>
-                                    <button type="button" onclick="showDashboard()">RETURN TO COMMAND</button>
-                                </div>
-                                <hr class="workflow-divider">
-                                <h2>03 // PERSONNEL DEPLOYMENTS</h2>
+<aside class="deployment-control-panel">                                <h2>03 // PERSONNEL DEPLOYMENTS</h2>
                                 <div id="deploymentPersonnelList" class="deployment-personnel-list">NO DEPLOYMENTS LOADED.</div>
                             </aside>
+<div class="workflow-actions"><button type="button" onclick="showDashboard()">RETURN TO COMMAND</button></div>
                         </div>
                     </div>
                     <p class="workflow-muted">DEPLOYMENT IS A FORCE-LEVEL ASSIGNMENT. INDIVIDUAL UNIT PLACEMENT AND BATTLEFIELD ORDERS WILL BE IMPLEMENTED IN A FUTURE BATTLEFIELD UPLINK MODULE.</p>
@@ -2491,7 +2507,7 @@ function openCompanyRoster() {
         target.textContent = "DATABASE ERROR: " + error.message;
     });
 }
-const DEPLOYMENT_CELLS = [{"zone":"A","hex":"0014","x":84,"y":1233},{"zone":"A","hex":"0015","x":84,"y":1315},{"zone":"A","hex":"0016","x":84,"y":1397},{"zone":"A","hex":"0114","x":155,"y":1274},{"zone":"A","hex":"0115","x":155,"y":1356},{"zone":"A","hex":"0116","x":155,"y":1439},{"zone":"B","hex":"0001","x":84,"y":161},{"zone":"B","hex":"0002","x":84,"y":244},{"zone":"B","hex":"0003","x":84,"y":326},{"zone":"B","hex":"0100","x":155,"y":120},{"zone":"B","hex":"0101","x":155,"y":203},{"zone":"B","hex":"0102","x":155,"y":285},{"zone":"C","hex":"1001","x":797,"y":161},{"zone":"C","hex":"1002","x":797,"y":244},{"zone":"C","hex":"1100","x":868,"y":120},{"zone":"C","hex":"1101","x":868,"y":203},{"zone":"C","hex":"1201","x":940,"y":161},{"zone":"C","hex":"1202","x":940,"y":244},{"zone":"D","hex":"2315","x":1724,"y":1356},{"zone":"D","hex":"2316","x":1724,"y":1439},{"zone":"D","hex":"2416","x":1795,"y":1397},{"zone":"D","hex":"2417","x":1795,"y":1480},{"zone":"D","hex":"2515","x":1866,"y":1356},{"zone":"D","hex":"2516","x":1866,"y":1439},{"zone":"E","hex":"1115","x":868,"y":1356},{"zone":"E","hex":"1116","x":868,"y":1439},{"zone":"E","hex":"1216","x":940,"y":1397},{"zone":"E","hex":"1217","x":940,"y":1480},{"zone":"E","hex":"1315","x":1011,"y":1356},{"zone":"E","hex":"1316","x":1011,"y":1439}];
+const DEPLOYMENT_CELLS = [{"zone":"A","hex":"0014","x":84,"y":1233},{"zone":"A","hex":"0015","x":84,"y":1315},{"zone":"A","hex":"0016","x":84,"y":1397},{"zone":"A","hex":"0114","x":155,"y":1274},{"zone":"A","hex":"0115","x":155,"y":1356},{"zone":"A","hex":"0116","x":155,"y":1439},{"zone":"B","hex":"0001","x":84,"y":161},{"zone":"B","hex":"0002","x":84,"y":244},{"zone":"B","hex":"0003","x":84,"y":326},{"zone":"B","hex":"0100","x":155,"y":120},{"zone":"B","hex":"0101","x":155,"y":203},{"zone":"B","hex":"0102","x":155,"y":285},{"zone":"C","hex":"1001","x":797,"y":161},{"zone":"C","hex":"1002","x":797,"y":244},{"zone":"C","hex":"1100","x":868,"y":120},{"zone":"C","hex":"1101","x":868,"y":203},{"zone":"C","hex":"1201","x":940,"y":161},{"zone":"C","hex":"1202","x":940,"y":244},{"zone":"D","hex":"2115","x":1581,"y":1356},{"zone":"D","hex":"2116","x":1581,"y":1439},{"zone":"D","hex":"2216","x":1652,"y":1397},{"zone":"D","hex":"2217","x":1652,"y":1480},{"zone":"D","hex":"2315","x":1723,"y":1356},{"zone":"D","hex":"2316","x":1723,"y":1439},{"zone":"E","hex":"1115","x":868,"y":1356},{"zone":"E","hex":"1116","x":868,"y":1439},{"zone":"E","hex":"1216","x":940,"y":1397},{"zone":"E","hex":"1217","x":940,"y":1480},{"zone":"E","hex":"1315","x":1011,"y":1356},{"zone":"E","hex":"1316","x":1011,"y":1439}];
 function deploymentCell(x,y) { return DEPLOYMENT_CELLS.find(c => c.x === Number(x) && c.y === Number(y)); }
 function deploymentPolygon(c) {
  return [[-47.5,0],[-23.75,-41.2],[23.75,-41.2],[47.5,0],[23.75,41.2],[-23.75,41.2]].map(p=> (c.x+p[0])+','+(c.y+p[1])).join(' ');
@@ -2507,6 +2523,7 @@ let selectedDeploymentPoint = null;
 let savedDeploymentPoint = null;
 let deploymentForceRecord = null;
 let deploymentLoadSequence = 0;
+let deploymentSaving = false;
 
 function openDeploymentMap() {
     hideWorkflowScreens();
@@ -2545,21 +2562,25 @@ function renderDeploymentSelection() {
         hint.textContent = "Select a highlighted deployment hex.";
     }
 
-    confirm.disabled = !selectedDeploymentPoint || !deploymentForceRecord || !deploymentForceRecord.units || !deploymentForceRecord.units.length;
+    document.getElementById("deploymentFloating").classList.toggle("hidden", !selectedDeploymentPoint);
+    confirm.disabled = deploymentSaving || !selectedDeploymentPoint || !deploymentForceRecord || !deploymentForceRecord.units || !deploymentForceRecord.units.length;
     clear.disabled = !selectedDeploymentPoint;
 }
 
 function clearDeploymentSelection() {
+    if (deploymentSaving) return;
     selectedDeploymentPoint = null;
     renderDeploymentSelection();
     document.getElementById("deploymentStatus").textContent = "PROPOSED POSITION CLEARED. THE PREVIOUS SAVED ASSIGNMENT IS UNCHANGED.";
 }
 
 function handleDeploymentMapClick(event) {
+    if (deploymentSaving || event.target.closest("#deploymentFloating")) return;
     const cell = DEPLOYMENT_CELLS.find(c=>c.hex===event.target.getAttribute('data-hex'));
     if (!cell) { document.getElementById('deploymentStatus').textContent='SELECT AN AUTHORISED DEPLOYMENT HEX IN ZONES A–E.'; return; }
     selectedDeploymentPoint = {x:cell.x,y:cell.y};
     renderDeploymentSelection();
+    positionDeploymentPanel(cell);
     document.getElementById("deploymentStatus").textContent = "LANDING POSITION SELECTED // CONFIRM TO COMMIT YOUR FORCE DEPLOYMENT.";
 }
 
@@ -2662,6 +2683,7 @@ async function saveDeploymentSelection() {
     if (!selectedDeploymentPoint || !deploymentForceRecord || !(deploymentForceRecord.units || []).length) return;
     const button = document.getElementById("confirmDeploymentButton");
     const status = document.getElementById("deploymentStatus");
+    deploymentSaving = true;
     button.disabled = true;
     status.textContent = "SUBMITTING LANDING ASSIGNMENT...";
     const payload = {
@@ -2699,9 +2721,27 @@ async function saveDeploymentSelection() {
     } catch (error) {
         status.textContent = "DEPLOYMENT SAVE ERROR // " + error.message;
         button.disabled = false;
-    }
+    } finally { deploymentSaving = false; renderDeploymentSelection(); }
 }
 document.getElementById("deploymentMapStage").addEventListener("click", handleDeploymentMapClick);
+
+
+const deploymentFloat = document.getElementById('deploymentFloating');
+const deploymentStage = document.getElementById('deploymentMapStage');
+function moveDeploymentPanel(x,y) {
+ deploymentFloat.style.left = Math.max(0,Math.min(x,deploymentStage.clientWidth-deploymentFloat.offsetWidth))+'px';
+ deploymentFloat.style.top = Math.max(0,Math.min(y,deploymentStage.clientHeight-deploymentFloat.offsetHeight))+'px';
+}
+function positionDeploymentPanel(cell) {
+ const x=cell.x/2048*deploymentStage.clientWidth, y=cell.y/1544*deploymentStage.clientHeight;
+ moveDeploymentPanel(x+deploymentFloat.offsetWidth+24>deploymentStage.clientWidth ? x-deploymentFloat.offsetWidth-24 : x+24,y-deploymentFloat.offsetHeight/2);
+}
+const deploymentDragbar=document.getElementById('deploymentDragbar');
+let deploymentDrag=null;
+deploymentDragbar.addEventListener('pointerdown',e=>{if(e.target.closest('button'))return; deploymentDrag={x:e.clientX-deploymentFloat.offsetLeft,y:e.clientY-deploymentFloat.offsetTop};deploymentDragbar.setPointerCapture(e.pointerId);e.preventDefault();});
+deploymentDragbar.addEventListener('pointermove',e=>{if(deploymentDrag)moveDeploymentPanel(e.clientX-deploymentDrag.x,e.clientY-deploymentDrag.y);});
+for(const event of ['pointerup','pointercancel','lostpointercapture'])deploymentDragbar.addEventListener(event,()=>deploymentDrag=null);
+window.addEventListener('resize',()=>{if(!deploymentFloat.classList.contains('hidden'))moveDeploymentPanel(deploymentFloat.offsetLeft,deploymentFloat.offsetTop);});
 
 function changePersonnel() {
     currentPersonnelSlot = null;
