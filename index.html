@@ -1205,6 +1205,7 @@ function prepareTypewriter() {
     clearInterval(scrollTimer);
 
     viewport.scrollTop = 0;
+    typingNodes.forEach(entry=>{entry.node.nodeValue=entry.text;});
     typingNodes = [];
     typingNodeIndex = 0;
     typingCharIndex = 0;
@@ -2346,11 +2347,18 @@ function showDashboard() {
     statusText.textContent = "COMMAND NETWORK // READY";
 }
 function returnToCommandNetwork() {
+    const backToInbox=transmissionFromInbox;
+    transmissionFromInbox=false;
+    clearTimeout(typingTimer);
+    typingNodes.forEach(entry=>{entry.node.nodeValue=entry.text;});
+    typingNodes=[];
+    isTyping=false;
     clearInterval(scrollTimer);
     scrolling = false;
     isPaused = false;
     document.getElementById("returnToCommandButton").style.display = "none";
     showDashboard();
+    if(backToInbox)openMail();
 }
 function showWorkflowAfterTransmission() {
     viewport.style.display = "none";
@@ -2361,7 +2369,9 @@ function showWorkflowAfterTransmission() {
     workflowPanel.scrollTop = 0;
     statusText.textContent = "COMMAND NETWORK // READY";
 }
-function openTransmission() {
+function openTransmission(fromInbox=false) {
+    transmissionFromInbox = fromInbox === true;
+    document.getElementById("returnToCommandButton").textContent=transmissionFromInbox?"RETURN TO CONTRACT NETWORK":"RETURN TO COMMAND NETWORK";
     document.getElementById("returnToCommandButton").style.display = "none";
     hideWorkflowScreens();
     workflowPanel.classList.add("hidden");
@@ -2369,7 +2379,7 @@ function openTransmission() {
     viewport.scrollTop = 0;
     document.querySelector(".controls").style.display = "flex";
     statusText.textContent = "TRANSMISSION ARCHIVE";
-    pauseButton.textContent = "REPLAY";
+    pauseButton.textContent = "PAUSE";
     isPaused = false;
     scrolling = false;
     clearInterval(scrollTimer);
@@ -3176,7 +3186,7 @@ function returnToPersonnel() {
 
 
 // Initial state: personnel selection is the terminal's landing screen.
-const BUILD_TIME="2026-11-28T08:01:05.650106+00:00";
+const BUILD_TIME="2026-11-28T08:20:33.143307+00:00";
 
 let commanderToken='', commanderExpiry=0, markerList=[], markerUndo=[], markerEditMode='inspect', movingMarker=null, markersReady=false, markerRevision='', markerBusy=false;
 function isCommander(){return !!commanderToken && Date.now()<commanderExpiry;}
@@ -3198,13 +3208,15 @@ async function saveMarkers(){if(!isCommander()||!markersReady||markerBusy)return
 function updateBuild(){const el=document.getElementById('htmlBuild');if(el.dataset.loaded)return;el.dataset.loaded='1';const format=t=>new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Sydney',dateStyle:'medium',timeStyle:'medium',hour12:false}).format(new Date(t));el.textContent='HTML BUILD // '+format(BUILD_TIME)+' SYDNEY';const host=location.hostname.match(/^([^.]+)\.github\.io$/);const repo=location.pathname.split('/').filter(Boolean)[0];if(host&&repo)fetch('https://api.github.com/repos/'+encodeURIComponent(host[1])+'/'+encodeURIComponent(repo)+'/commits?path=index.html&per_page=1').then(r=>{if(!r.ok)throw Error();return r.json()}).then(a=>{if(a[0]?.commit?.committer?.date)el.textContent='LATEST HTML COMMIT // '+format(a[0].commit.committer.date)+' SYDNEY';}).catch(()=>{});}
 
 
+const HOMESTEAD_MAIL={id:'SYSTEM-HOMESTEAD-001',sender:'Provisional Government of Veyra',subject:'Contract: Operation Homestead',category:'CONTRACT',recipient:'ALL COMPANY',originalBriefing:true};
 let mailGeneration=0,mailMessages=[],mailRead=new Set(),mailIdentity='';
+let transmissionFromInbox=false;
 function mailEl(id){return document.getElementById(id);}
 function mailText(tag,text,parent){const e=document.createElement(tag);e.textContent=text;parent.appendChild(e);return e;}
 function mailDate(t){return new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Sydney',dateStyle:'medium',timeStyle:'short',hour12:false}).format(new Date(t));}
-async function openMail(compose=false){const generation=++mailGeneration;const admin=isCommander();const id=admin?'COMMANDER':currentPersonnelId;mailIdentity=id;hideWorkflowScreens();mailEl('mailScreen').classList.remove('hidden');mailEl('mailCompose').classList.add('hidden');mailEl('mailComposeButton').classList.toggle('hidden',!admin);mailEl('mailList').replaceChildren();mailEl('mailReader').textContent='SELECT A MESSAGE';mailEl('mailStatus').textContent='RETRIEVING CORRESPONDENCE...';workflowPanel.scrollTop=0;statusText.textContent='CONTRACT NETWORK';try{mailRead=new Set(JSON.parse(localStorage.getItem('freedom-mail-read-'+id)||'[]'));}catch(e){mailRead=new Set();}if(compose&&admin)showCompose();try{const r=admin?await commanderRequest('commanderInbox',{token:commanderToken}):await apiGet('inbox',{personnelId:id});if(generation!==mailGeneration||mailEl('mailScreen').classList.contains('hidden'))return;if(!r.success)throw Error(r.error);mailMessages=r.messages||[];renderMailList();mailEl('mailStatus').textContent=mailMessages.length+' MESSAGES // '+(admin?(r.limited?'LATEST MESSAGE ONLY // ARCHIVE LIMIT':'ALL SENT CORRESPONDENCE'):'PERSONNEL INBOX');}catch(e){if(generation===mailGeneration)mailEl('mailStatus').textContent=e.message;}}
-function renderMailList(selected){const list=mailEl('mailList');list.replaceChildren();if(!mailMessages.length)mailText('p','NO CORRESPONDENCE RECEIVED',list);for(const m of mailMessages){const b=mailText('button','',list);b.className='mail-item'+(m.id===selected?' active':'');mailText('strong',(mailRead.has(m.id)?'':'● ')+m.sender,b);mailText('span',m.subject,b);mailText('span',m.category+' // '+mailDate(m.sent),b);b.onclick=()=>readMail(m);}}
-function readMail(m){mailRead.add(m.id);try{localStorage.setItem('freedom-mail-read-'+mailIdentity,JSON.stringify([...mailRead]));}catch(e){}renderMailList(m.id);const r=mailEl('mailReader');r.replaceChildren();mailText('h2',m.subject,r);mailText('p','FROM: '+m.sender+'\nTO: '+m.recipient+'\n'+m.category+' // '+mailDate(m.sent),r);r.appendChild(document.createElement('hr'));mailText('div',m.body,r);if(m.attachment==='HOMESTEAD'){const b=mailText('button','OPEN CONTRACT ATTACHMENT',r);b.onclick=openTransmission;}}
+async function openMail(compose=false){const generation=++mailGeneration;const admin=isCommander();const id=admin?'COMMANDER':currentPersonnelId;mailIdentity=id;hideWorkflowScreens();mailEl('mailScreen').classList.remove('hidden');mailEl('mailCompose').classList.add('hidden');mailEl('mailComposeButton').classList.toggle('hidden',!admin);mailEl('mailList').replaceChildren();mailEl('mailReader').textContent='SELECT A MESSAGE';mailEl('mailStatus').textContent='RETRIEVING CORRESPONDENCE...';workflowPanel.scrollTop=0;statusText.textContent='CONTRACT NETWORK';try{mailRead=new Set(JSON.parse(localStorage.getItem('freedom-mail-read-'+id)||'[]'));}catch(e){mailRead=new Set();}mailMessages=[HOMESTEAD_MAIL];renderMailList();if(compose&&admin)showCompose();try{const r=admin?await commanderRequest('commanderInbox',{token:commanderToken}):await apiGet('inbox',{personnelId:id});if(generation!==mailGeneration||mailEl('mailScreen').classList.contains('hidden'))return;if(!r.success)throw Error(r.error);mailMessages=[...(r.messages||[]),HOMESTEAD_MAIL];renderMailList();mailEl('mailStatus').textContent=mailMessages.length+' MESSAGES // '+(admin?(r.limited?'LATEST MESSAGE ONLY // ARCHIVE LIMIT':'ALL SENT CORRESPONDENCE'):'PERSONNEL INBOX');}catch(e){if(generation===mailGeneration)mailEl('mailStatus').textContent=e.message;}}
+function renderMailList(selected){const list=mailEl('mailList');list.replaceChildren();if(!mailMessages.length)mailText('p','NO CORRESPONDENCE RECEIVED',list);for(const m of mailMessages){const b=mailText('button','',list);b.className='mail-item'+(m.id===selected?' active':'');mailText('strong',(mailRead.has(m.id)?'':'● ')+m.sender,b);mailText('span',m.subject,b);mailText('span',m.category+' // '+(m.originalBriefing?'INITIAL CORRESPONDENCE':mailDate(m.sent)),b);b.onclick=()=>readMail(m);}}
+function readMail(m){mailRead.add(m.id);try{localStorage.setItem('freedom-mail-read-'+mailIdentity,JSON.stringify([...mailRead]));}catch(e){}renderMailList(m.id);if(m.originalBriefing){openTransmission(true);return;}const r=mailEl('mailReader');r.replaceChildren();mailText('h2',m.subject,r);mailText('p','FROM: '+m.sender+'\nTO: '+m.recipient+'\n'+m.category+' // '+mailDate(m.sent),r);r.appendChild(document.createElement('hr'));mailText('div',m.body,r);if(m.attachment==='HOMESTEAD'){const b=mailText('button','OPEN CONTRACT ATTACHMENT',r);b.onclick=openTransmission;}}
 function showCompose(){if(!isCommander())return;const s=mailEl('mailRecipient');s.replaceChildren();const all=mailText('option','ALL COMPANY',s);all.value='ALL';PERSONNEL_SLOTS.forEach((p,i)=>{const o=mailText('option',p.playerName,s);o.value=String(p.personnelId||p.playerName||('PLAYER00'+(i+1))).trim();});mailEl('mailCompose').classList.remove('hidden');mailEl('mailCompose').scrollIntoView({block:'nearest'});}
 async function sendMail(){if(!isCommander())return;const b=mailEl('mailSend');if(b.disabled)return;b.disabled=true;const s=mailEl('mailStatus');s.textContent='TRANSMITTING...';try{await commanderRequest('sendMail',{token:commanderToken,recipient:mailEl('mailRecipient').value,sender:mailEl('mailSender').value,category:mailEl('mailCategory').value,subject:mailEl('mailSubject').value,body:mailEl('mailBody').value,attachment:mailEl('mailAttachment').checked?'HOMESTEAD':''});mailEl('mailCompose').reset();await openMail();mailEl('mailStatus').textContent='MESSAGE SENT';}catch(e){s.textContent=e.message;}finally{b.disabled=false;}}
 
