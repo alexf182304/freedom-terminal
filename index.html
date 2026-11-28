@@ -686,6 +686,47 @@ input[type="range"] {
     .workflow-section { padding:14px; }
 }
 
+
+/* Planetary deployment map */
+.deployment-heading { display:flex; justify-content:space-between; align-items:flex-start; gap:16px; }
+.deployment-map-status { color:#9fe59f; font-size:11px; text-align:right; max-width:260px; }
+.deployment-force-summary { border:1px solid #315f37; background:#071107; padding:12px 14px; margin:14px 0; color:#c5ffc5; font-size:12px; line-height:1.7; }
+.deployment-map-layout { display:grid; grid-template-columns:minmax(0,1.7fr) minmax(240px,.8fr); gap:18px; align-items:start; }
+.deployment-map-frame { border:1px solid #477a47; background:#020602; padding:5px; box-shadow:0 0 18px rgba(90,255,90,.12); }
+.deployment-map-stage { position:relative; width:100%; line-height:0; cursor:crosshair; user-select:none; }
+.deployment-map-stage img { display:block; width:100%; height:auto; }
+.deployment-map-overlay { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; overflow:visible; }
+.unknown-site-disc { fill:#ffe66b; stroke:#151b0d; stroke-width:5; }
+.unknown-site-question { fill:#202515; font: bold 34px Arial,sans-serif; }
+.deployment-selection-overlay { z-index:2; }
+.deployment-selected-disc { fill:rgba(80,255,120,.35); stroke:#caffce; stroke-width:7; stroke-dasharray:18 10; }
+.deployment-selected-core { fill:#caffce; stroke:#17331a; stroke-width:5; }
+.deployment-selected-label { fill:#e7ffe7; stroke:#071107; stroke-width:7; paint-order:stroke; font:bold 30px "Share Tech Mono",monospace; }
+.deployment-other-disc { fill:rgba(60,220,255,.25); stroke:#8cecff; stroke-width:6; }
+.deployment-other-label { fill:#d7faff; stroke:#071107; stroke-width:7; paint-order:stroke; font:bold 25px "Share Tech Mono",monospace; }
+.deployment-map-legend { display:flex; flex-wrap:wrap; gap:9px 18px; margin-top:10px; color:#8eb88e; font-size:10px; }
+.deployment-map-legend span { display:flex; align-items:center; gap:7px; }
+.deployment-map-legend i { display:inline-block; width:12px; height:12px; border-radius:50%; }
+.legend-unknown { background:#ffe66b; border:1px solid #151b0d; }
+.legend-selected { background:#caffce; border:2px solid #377d42; }
+.legend-other { background:#8cecff; border:1px solid #176477; }
+.deployment-map-help { margin-top:10px; }
+.deployment-control-panel { border:1px solid #31563a; background:rgba(5,12,5,.72); padding:14px; min-width:0; }
+.deployment-control-panel h2 { font-family:"Rajdhani",sans-serif; font-size:18px; letter-spacing:1px; color:#c5ffc5; margin:0 0 12px; }
+.deployment-coordinate-card { display:flex; flex-direction:column; gap:8px; border:1px solid #477a47; background:#081208; padding:13px; }
+.deployment-coordinate-card strong { font:700 18px "Rajdhani",sans-serif; color:#d0ffd0; overflow-wrap:anywhere; }
+.deployment-actions { display:flex; flex-direction:column; }
+.deployment-actions button { width:100%; }
+.deployment-personnel-list { display:grid; gap:8px; }
+.deployment-personnel-item { border:1px solid #31563a; background:#081208; padding:9px; font-size:11px; line-height:1.5; }
+.deployment-personnel-item strong { color:#c5ffc5; display:block; font-size:13px; }
+.deployment-personnel-item span { color:#83bd83; }
+@media (max-width: 850px) {
+  .deployment-map-layout { grid-template-columns:1fr; }
+  .deployment-heading { flex-direction:column; }
+  .deployment-map-status { text-align:left; }
+}
+
 </style>
 </head>
 
@@ -944,11 +985,103 @@ input[type="range"] {
                     <div class="workflow-actions"><button type="button" onclick="showDashboard()">RETURN TO COMMAND</button></div>
                 </section>
 
-                <section id="mapPlaceholderScreen" class="hidden">
+                <section id="deploymentScreen" class="hidden">
                     <h1 class="workflow-title">PLANETARY DEPLOYMENT</h1>
-                    <p class="workflow-subtitle">VEYRA // OPERATION HOMESTEAD</p>
-                    <div class="workflow-section"><h2>PLANETARY SURVEY FILE</h2><p class="workflow-muted">The Veyra deployment map and landing-zone intelligence panel will be installed in this section in the next stage.</p><p class="workflow-muted">AVAILABLE LANDING ZONES: A // B // C // D // E</p></div>
-                    <div class="workflow-actions"><button type="button" onclick="showDashboard()">RETURN TO COMMAND</button></div>
+                    <p class="workflow-subtitle">VEYRA // OPERATION HOMESTEAD // LANDING ZONE ASSIGNMENT</p>
+
+                    <div class="workflow-section">
+                        <div class="deployment-heading">
+                            <div>
+                                <h2>01 // PLANETARY SURVEY</h2>
+                                <p class="workflow-muted">Select a landing position on the map. Your entire registered force will be assigned to this location. Multiple personnel may share a landing position.</p>
+                            </div>
+                            <div class="deployment-map-status" id="deploymentMapStatus">CONNECTING TO DEPLOYMENT RECORDS...</div>
+                        </div>
+
+                        <div class="deployment-force-summary" id="deploymentForceSummary">
+                            RETRIEVING REGISTERED FORCE...
+                        </div>
+
+                        <div class="deployment-map-layout">
+                            <div class="deployment-map-column">
+                                <div class="deployment-map-frame">
+                                    <div class="deployment-map-stage" id="deploymentMapStage">
+                                        <img id="deploymentMapImage" src="veyra-deployment-map.jpg" alt="Planetary map of Veyra with hex coordinates and terrain" draggable="false">
+                                        <svg class="deployment-map-overlay" viewBox="0 0 2048 1544" preserveAspectRatio="none" aria-hidden="true">
+                                            <g class="unknown-site-marker" transform="translate(1298.9 198.5)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1728.9 277.4)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1445.1 281.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1585.3 282.0)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1370.8 406.8)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(223.6 409.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1584.1 446.9)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1514.1 488.1)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(438.9 530.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(941.1 570.0)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1801.5 571.9)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(795.6 572.2)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1517.5 573.1)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1155.2 611.6)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(581.8 613.0)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(797.4 737.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1370.1 743.0)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1873.0 778.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1730.2 779.0)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(367.0 814.8)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(510.7 814.8)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(655.2 815.2)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1944.6 819.0)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1440.7 863.1)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1876.4 864.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1800.4 901.5)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(510.7 902.8)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(941.4 905.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(439.2 944.8)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1154.8 945.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1800.5 985.4)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1729.4 1027.2)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1587.1 1112.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1944.6 1148.7)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1370.8 1152.7)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1154.8 1192.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1154.8 1279.5)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1871.9 1359.1)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+<g class="unknown-site-marker" transform="translate(1229.7 1400.9)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+                                        </svg>
+                                        <svg class="deployment-map-overlay deployment-selection-overlay" id="deploymentSelectionOverlay" viewBox="0 0 2048 1544" preserveAspectRatio="none" aria-hidden="true">
+                                            <g id="deploymentOtherMarkers"></g>
+                                            <g id="deploymentSelectedMarker"></g>
+                                        </svg>
+                                    </div>
+                                </div>
+                                <div class="deployment-map-legend">
+                                    <span><i class="legend-unknown"></i> UNKNOWN LOCATION // IDENTIFICATION LOST</span>
+                                    <span><i class="legend-selected"></i> YOUR SELECTED LANDING POSITION</span>
+                                    <span><i class="legend-other"></i> REGISTERED PERSONNEL LANDING POSITION</span>
+                                </div>
+                                <p class="workflow-muted deployment-map-help">CLICK ANYWHERE INSIDE THE MAP TO PROPOSE A LANDING POSITION. YOUR SELECTION IS NOT SAVED UNTIL YOU CONFIRM IT.</p>
+                            </div>
+
+                            <aside class="deployment-control-panel">
+                                <h2>02 // LANDING ASSIGNMENT</h2>
+                                <div class="deployment-coordinate-card">
+                                    <span class="workflow-muted">PROPOSED LANDING POSITION</span>
+                                    <strong id="deploymentCoordinate">NO POSITION SELECTED</strong>
+                                    <span class="workflow-muted" id="deploymentSelectionHint">Click the map to choose a position.</span>
+                                </div>
+                                <div class="workflow-status" id="deploymentStatus" aria-live="polite">AWAITING LANDING POSITION.</div>
+                                <div class="workflow-actions deployment-actions">
+                                    <button type="button" class="primary" id="confirmDeploymentButton" onclick="saveDeploymentSelection()" disabled>CONFIRM DEPLOYMENT</button>
+                                    <button type="button" id="clearDeploymentButton" onclick="clearDeploymentSelection()" disabled>CLEAR SELECTION</button>
+                                    <button type="button" onclick="showDashboard()">RETURN TO COMMAND</button>
+                                </div>
+                                <hr class="workflow-divider">
+                                <h2>03 // PERSONNEL DEPLOYMENTS</h2>
+                                <div id="deploymentPersonnelList" class="deployment-personnel-list">NO DEPLOYMENTS LOADED.</div>
+                            </aside>
+                        </div>
+                    </div>
+                    <p class="workflow-muted">DEPLOYMENT IS A FORCE-LEVEL ASSIGNMENT. INDIVIDUAL UNIT PLACEMENT AND BATTLEFIELD ORDERS WILL BE IMPLEMENTED IN A FUTURE BATTLEFIELD UPLINK MODULE.</p>
                 </section>
 
                 <section id="forceScreen" class="hidden">
@@ -1307,11 +1440,11 @@ function scheduleGlitch() {
    accessCode is displayed as stars only; it is not a real password.
 ========================================================= */
 const PERSONNEL_SLOTS = [
-    { playerName: "Lt. Col Will", personnelId: "", accessCode: "********" },
-    { playerName: "Lt. Col. Ben", personnelId: "", accessCode: "********" },
-    { playerName: "Lt. Col. Kevin", personnelId: "", accessCode: "********" },
-    { playerName: "Lt. Col. Mark", personnelId: "", accessCode: "********" },
-    { playerName: "Lt. Col. Mitchel", personnelId: "", accessCode: "********" }
+    { playerName: "Player One", personnelId: "", accessCode: "********" },
+    { playerName: "Player Two", personnelId: "", accessCode: "********" },
+    { playerName: "Player Three", personnelId: "", accessCode: "********" },
+    { playerName: "Player Four", personnelId: "", accessCode: "********" },
+    { playerName: "Player Five", personnelId: "", accessCode: "********" }
 ];
 
 function renderPersonnelSlots() {
@@ -1339,7 +1472,7 @@ const personnelScreen = document.getElementById("personnelScreen");
 const forceScreen = document.getElementById("forceScreen");
 const dashboardScreen = document.getElementById("dashboardScreen");
 const rosterScreen = document.getElementById("rosterScreen");
-const mapPlaceholderScreen = document.getElementById("mapPlaceholderScreen");
+const deploymentScreen = document.getElementById("deploymentScreen");
 const personnelNameField = document.getElementById("personnelName");
 const personnelCodeField = document.getElementById("personnelCode");
 const authenticateButton = document.getElementById("authenticateButton");
@@ -2184,7 +2317,7 @@ function writeForceDrafts(drafts) {
     }
 }
 function hideWorkflowScreens() {
-    [personnelScreen, dashboardScreen, forceScreen, rosterScreen, mapPlaceholderScreen].forEach(function(section) {
+    [personnelScreen, dashboardScreen, forceScreen, rosterScreen, deploymentScreen].forEach(function(section) {
         if (section) section.classList.add("hidden");
     });
 }
@@ -2355,12 +2488,205 @@ function openCompanyRoster() {
         target.textContent = "DATABASE ERROR: " + error.message;
     });
 }
+let selectedDeploymentPoint = null;
+let savedDeploymentPoint = null;
+let deploymentForceRecord = null;
+let deploymentLoadSequence = 0;
+
 function openDeploymentMap() {
     hideWorkflowScreens();
-    mapPlaceholderScreen.classList.remove("hidden");
+    deploymentScreen.classList.remove("hidden");
     workflowPanel.scrollTop = 0;
-    statusText.textContent = "PLANETARY DEPLOYMENT // SURVEY FILE";
+    statusText.textContent = "PLANETARY DEPLOYMENT // LANDING ASSIGNMENT";
+    selectedDeploymentPoint = null;
+    renderDeploymentSelection();
+    loadDeploymentRecords();
 }
+
+function renderDeploymentSelection() {
+    const selected = document.getElementById("deploymentSelectedMarker");
+    const coordinate = document.getElementById("deploymentCoordinate");
+    const hint = document.getElementById("deploymentSelectionHint");
+    const confirm = document.getElementById("confirmDeploymentButton");
+    const clear = document.getElementById("clearDeploymentButton");
+    if (!selected) return;
+
+    const point = selectedDeploymentPoint || savedDeploymentPoint;
+    if (point) {
+        selected.innerHTML =
+            '<circle class="deployment-selected-disc" cx="' + point.x + '" cy="' + point.y + '" r="48"></circle>' +
+            '<circle class="deployment-selected-core" cx="' + point.x + '" cy="' + point.y + '" r="12"></circle>' +
+            '<text class="deployment-selected-label" x="' + (point.x + 55) + '" y="' + (point.y - 48) + '">LANDING ZONE</text>';
+        coordinate.textContent = "MAP POSITION // X " + Math.round(point.x) + " / Y " + Math.round(point.y);
+        hint.textContent = selectedDeploymentPoint
+            ? "Proposed position. Confirm to save this landing assignment."
+            : "Previously saved landing position.";
+    } else {
+        selected.innerHTML = "";
+        coordinate.textContent = "NO POSITION SELECTED";
+        hint.textContent = "Click the map to choose a position.";
+    }
+
+    confirm.disabled = !selectedDeploymentPoint || !deploymentForceRecord || !deploymentForceRecord.units || !deploymentForceRecord.units.length;
+    clear.disabled = !selectedDeploymentPoint;
+}
+
+function clearDeploymentSelection() {
+    selectedDeploymentPoint = null;
+    renderDeploymentSelection();
+    document.getElementById("deploymentStatus").textContent = "PROPOSED POSITION CLEARED. THE PREVIOUS SAVED ASSIGNMENT IS UNCHANGED.";
+}
+
+function handleDeploymentMapClick(event) {
+    const stage = document.getElementById("deploymentMapStage");
+    const rect = stage.getBoundingClientRect();
+    const x = Math.max(0, Math.min(2048, ((event.clientX - rect.left) / rect.width) * 2048));
+    const y = Math.max(0, Math.min(1544, ((event.clientY - rect.top) / rect.height) * 1544));
+    selectedDeploymentPoint = { x: Math.round(x), y: Math.round(y) };
+    renderDeploymentSelection();
+    document.getElementById("deploymentStatus").textContent = "LANDING POSITION SELECTED // CONFIRM TO COMMIT YOUR FORCE DEPLOYMENT.";
+}
+
+async function loadDeploymentRecords() {
+    const sequence = ++deploymentLoadSequence;
+    const status = document.getElementById("deploymentMapStatus");
+    const summary = document.getElementById("deploymentForceSummary");
+    const list = document.getElementById("deploymentPersonnelList");
+    const actionStatus = document.getElementById("deploymentStatus");
+    status.textContent = "CONNECTING TO CENTRAL DEPLOYMENT RECORDS...";
+    summary.textContent = "RETRIEVING REGISTERED FORCE...";
+    list.textContent = "RETRIEVING PERSONNEL DEPLOYMENTS...";
+    actionStatus.textContent = "AWAITING DEPLOYMENT DATA.";
+
+    try {
+        const results = await Promise.all([
+            apiGet("getForce", { personnelId: currentPersonnelId }),
+            apiGet("getDeploymentData")
+        ]);
+        if (sequence !== deploymentLoadSequence) return;
+        if (!results[0].success) throw new Error(results[0].error || "Could not retrieve your force.");
+        if (!results[1].success) throw new Error(results[1].error || "Could not retrieve deployment records.");
+
+        deploymentForceRecord = results[0].force || { units: [] };
+        const units = deploymentForceRecord.units || [];
+        summary.textContent = currentPlayerName + " // " + units.length + " REGISTERED UNIT(S) // " +
+            (deploymentForceRecord.totalRP || 0) + " RP COMMITTED.";
+
+        const mine = (results[1].deployments || []).find(function(item) {
+            return String(item.personnelId || "").toUpperCase() === String(currentPersonnelId || "").toUpperCase();
+        });
+        savedDeploymentPoint = mine ? { x: Number(mine.mapX), y: Number(mine.mapY) } : null;
+        renderDeploymentSelection();
+        renderOtherDeploymentMarkers(results[1].deployments || []);
+        renderDeploymentPersonnel(results[1].deployments || []);
+
+        if (!units.length) {
+            status.textContent = "NO FORCE REGISTERED // RETURN TO FORCE REGISTRATION BEFORE DEPLOYING.";
+        } else if (savedDeploymentPoint) {
+            status.textContent = "EXISTING LANDING ASSIGNMENT RETRIEVED // YOU MAY SELECT A NEW POSITION OR KEEP THIS ONE.";
+        } else {
+            status.textContent = "FORCE READY // SELECT A LANDING POSITION ON THE MAP.";
+        }
+        document.getElementById("deploymentMapStatus").textContent = "DEPLOYMENT DATABASE ONLINE";
+    } catch (error) {
+        if (sequence !== deploymentLoadSequence) return;
+        status.textContent = "DEPLOYMENT DATA ERROR // " + error.message;
+        document.getElementById("deploymentMapStatus").textContent = "DATABASE CONNECTION ERROR";
+        summary.textContent = "FORCE INFORMATION COULD NOT BE LOADED.";
+        list.textContent = "DEPLOYMENT RECORDS UNAVAILABLE.";
+    }
+}
+
+function renderOtherDeploymentMarkers(deployments) {
+    const group = document.getElementById("deploymentOtherMarkers");
+    group.innerHTML = "";
+    deployments.forEach(function(item) {
+        if (String(item.personnelId || "").toUpperCase() === String(currentPersonnelId || "").toUpperCase()) return;
+        const x = Number(item.mapX), y = Number(item.mapY);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) return;
+        const initials = String(item.playerName || item.personnelId || "ALLY").trim().split(/\s+/).map(function(part) { return part.charAt(0); }).join("").slice(0, 3).toUpperCase();
+        const marker = document.createElementNS("http://www.w3.org/2000/svg", "g");
+        const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        circle.setAttribute("class", "deployment-other-disc");
+        circle.setAttribute("cx", String(x));
+        circle.setAttribute("cy", String(y));
+        circle.setAttribute("r", "34");
+        const label = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        label.setAttribute("class", "deployment-other-label");
+        label.setAttribute("x", String(x + 38));
+        label.setAttribute("y", String(y - 30));
+        label.textContent = initials;
+        marker.appendChild(circle);
+        marker.appendChild(label);
+        group.appendChild(marker);
+    });
+}
+
+function renderDeploymentPersonnel(deployments) {
+    const list = document.getElementById("deploymentPersonnelList");
+    list.innerHTML = "";
+    if (!deployments.length) {
+        list.textContent = "NO PERSONNEL HAVE SELECTED A LANDING POSITION.";
+        return;
+    }
+    deployments.forEach(function(item) {
+        const entry = document.createElement("div");
+        entry.className = "deployment-personnel-item";
+        const name = document.createElement("strong");
+        name.textContent = item.playerName || item.personnelId;
+        const detail = document.createElement("span");
+        detail.textContent = "MAP X " + Math.round(Number(item.mapX)) + " // Y " + Math.round(Number(item.mapY));
+        entry.appendChild(name);
+        entry.appendChild(detail);
+        list.appendChild(entry);
+    });
+}
+
+async function saveDeploymentSelection() {
+    if (!selectedDeploymentPoint || !deploymentForceRecord || !(deploymentForceRecord.units || []).length) return;
+    const button = document.getElementById("confirmDeploymentButton");
+    const status = document.getElementById("deploymentStatus");
+    button.disabled = true;
+    status.textContent = "SUBMITTING LANDING ASSIGNMENT...";
+    const payload = {
+        action: "saveDeployment",
+        personnelId: currentPersonnelId,
+        playerName: currentPlayerName,
+        mapX: selectedDeploymentPoint.x,
+        mapY: selectedDeploymentPoint.y
+    };
+
+    try {
+        await fetch(FREEDOM_API_URL, {
+            method: "POST",
+            mode: "no-cors",
+            headers: { "Content-Type": "text/plain;charset=utf-8" },
+            body: JSON.stringify(payload)
+        });
+        await new Promise(function(resolve) { setTimeout(resolve, 1200); });
+        const check = await apiGet("getDeploymentData");
+        if (!check.success) throw new Error(check.error || "Deployment verification failed.");
+        const saved = (check.deployments || []).find(function(item) {
+            return String(item.personnelId || "").toUpperCase() === String(currentPersonnelId || "").toUpperCase();
+        });
+        if (!saved || Number(saved.mapX) !== selectedDeploymentPoint.x || Number(saved.mapY) !== selectedDeploymentPoint.y) {
+            throw new Error("The database did not return the submitted landing assignment. Check the Apps Script deployment and PLAYER DEPLOYMENTS sheet.");
+        }
+
+        savedDeploymentPoint = { x: Number(saved.mapX), y: Number(saved.mapY) };
+        selectedDeploymentPoint = null;
+        renderDeploymentSelection();
+        renderOtherDeploymentMarkers(check.deployments || []);
+        renderDeploymentPersonnel(check.deployments || []);
+        status.textContent = "FORCE DEPLOYMENT REGISTERED // " + (deploymentForceRecord.units || []).length + " UNIT(S) ASSIGNED TO THE SELECTED LANDING POSITION.";
+        document.getElementById("deploymentMapStatus").textContent = "DEPLOYMENT RECORD SAVED";
+    } catch (error) {
+        status.textContent = "DEPLOYMENT SAVE ERROR // " + error.message;
+        button.disabled = false;
+    }
+}
+document.getElementById("deploymentMapStage").addEventListener("click", handleDeploymentMapClick);
+
 function changePersonnel() {
     currentPersonnelSlot = null;
     selectedPersonnelSlot = null;
@@ -2549,10 +2875,6 @@ function renderUnitDescription(container, source) {
                 while (i < lines.length && lines[i] && !sectionHeading(lines[i])) { headers.push(cleanCell(lines[i])); i++; if (headers.length >= 7) break; }
                 const values = [];
                 while (i < lines.length && lines[i] && !sectionHeading(lines[i])) { values.push(cleanCell(lines[i])); i++; }
-
-                // Flattened Google Sheets tables list each cell on its own line.
-                // Split the values into complete rows instead of treating the
-                // entire weapon list as one row.
                 if (headers.length && values.length) {
                     const rows = [];
                     for (let valueIndex = 0; valueIndex + headers.length <= values.length; valueIndex += headers.length) {
