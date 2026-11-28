@@ -959,7 +959,7 @@ input[type="range"] {
                     <div class="workflow-section">
                         <h2>01 // IDENTIFY PERSONNEL</h2>
                         <p class="workflow-muted">Select your assigned personnel slot. The terminal will populate the identification fields automatically. These are game identifiers only; no password verification is performed.</p>
-                        <div class="slot-grid" id="slotGrid"></div>
+                        <div class="slot-grid" id="slotGrid"></div><div class="workflow-actions"><button onclick="document.getElementById('commanderLogin').classList.toggle('hidden')">COMMANDER // RESTRICTED ACCESS</button></div><form id="commanderLogin" class="hidden" onsubmit="event.preventDefault(); commanderLogin()"><label for="commanderPassword">COMMANDER PASSWORD</label><input id="commanderPassword" type="password" autocomplete="current-password" required><button type="submit">AUTHENTICATE</button><div id="commanderLoginStatus" aria-live="polite"></div></form>
                         <hr class="workflow-divider">
                         <div class="workflow-fields">
                             <div class="workflow-field">
@@ -990,9 +990,9 @@ input[type="range"] {
                             <button class="dashboard-button" type="button" onclick="openCompanyRoster()"><strong>03 // COMPANY MUSTER</strong><span>Review the registered forces of all personnel slots.</span></button>
                             <button class="dashboard-button" type="button" onclick="openDeploymentMap()"><strong>04 // PLANETARY DEPLOYMENT</strong><span>Inspect Veyra and review the available landing zones.</span></button>
                         </div>
-                        <div class="workflow-status" id="dashboardStatus">COMMAND NETWORK READY // SELECT AN OPERATION.</div>
+                        <div id="commanderDashboard" class="hidden"><h2>RESTRICTED // COMMANDER OPERATIONS</h2><p>Manage planetary markers through Planetary Deployment. Battlefield Command is reserved for future implementation.</p><label for="commanderForceSlot">PERSONNEL FORCE RECORD</label><select id="commanderForceSlot"></select></div><div class="workflow-status" id="dashboardStatus">COMMAND NETWORK READY // SELECT AN OPERATION.</div>
                     </div>
-                    <div class="workflow-actions"><button type="button" onclick="changePersonnel()">CHANGE PERSONNEL IDENTITY</button></div>
+                    <div class="workflow-actions"><button type="button" onclick="changePersonnel()">CHANGE PERSONNEL IDENTITY / LOG OUT</button></div><div id="htmlBuild" style="text-align:right;font-size:12px;opacity:.8"></div>
                 </section>
 
                 <section id="rosterScreen" class="hidden">
@@ -1019,54 +1019,54 @@ input[type="range"] {
                             RETRIEVING REGISTERED FORCE...
                         </div>
 
-                        <div class="deployment-map-layout">
+                        <div id="commanderToolbar" class="hidden"><h2>COMMANDER // MAP EDITOR</h2><div class="workflow-actions"><button onclick="markerMode('inspect')">INSPECT</button><button onclick="markerMode('add')">ADD ?</button><button onclick="markerMode('remove')">REMOVE ?</button><button onclick="markerMode('move')">MOVE ?</button><button onclick="undoMarker()">UNDO</button><button onclick="saveMarkers()">SAVE CHANGES</button><button onclick="loadMarkers()">DISCARD / RELOAD</button></div><p id="markerStatus" aria-live="polite"></p></div><div class="deployment-map-layout">
                             <div class="deployment-map-column">
                                 <div class="deployment-map-frame">
                                     <div class="deployment-map-stage" id="deploymentMapStage">
                                         <img id="deploymentMapImage" src="veyra-deployment-map.jpg" alt="Planetary map of Veyra with hex coordinates and terrain" draggable="false">
                                         <svg class="deployment-map-overlay" viewBox="0 0 2048 1544" preserveAspectRatio="none" aria-hidden="true">
-                                            <g class="unknown-site-marker" transform="translate(1298.9 198.5)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1728.9 277.4)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1445.1 281.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1585.3 282.0)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1370.8 406.8)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(223.6 409.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1584.1 446.9)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1514.1 488.1)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(438.9 530.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(941.1 570.0)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1801.5 571.9)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(795.6 572.2)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1517.5 573.1)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1155.2 611.6)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(581.8 613.0)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(797.4 737.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1370.1 743.0)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1873.0 778.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1730.2 779.0)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(367.0 814.8)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(510.7 814.8)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(655.2 815.2)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1944.6 819.0)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1440.7 863.1)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1876.4 864.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1800.4 901.5)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(510.7 902.8)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(941.4 905.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(439.2 944.8)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1154.8 945.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1800.5 985.4)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1729.4 1027.2)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1587.1 1112.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1944.6 1148.7)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1370.8 1152.7)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1154.8 1192.3)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1154.8 1279.5)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1871.9 1359.1)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
-<g class="unknown-site-marker" transform="translate(1229.7 1400.9)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
+                                            
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
                                         </svg>
                                         <svg class="deployment-map-overlay deployment-selection-overlay" id="deploymentSelectionOverlay" viewBox="0 0 2048 1544" preserveAspectRatio="none">
-                                            <g id="deploymentZoneCells"></g><g id="deploymentOtherMarkers"></g>
+                                            <g id="commanderMarkers"></g><g id="deploymentZoneCells"></g><g id="deploymentOtherMarkers"></g>
                                             <g id="deploymentSelectedMarker"></g>
                                         </svg>
                             <aside id="deploymentFloating" class="deployment-control-panel deployment-floating hidden">
@@ -2341,6 +2341,8 @@ function hideWorkflowScreens() {
     });
 }
 function showDashboard() {
+    document.getElementById("commanderDashboard").classList.toggle("hidden", !isCommander());
+    updateBuild();
     viewport.style.display = "none";
     document.querySelector(".controls").style.display = "none";
     workflowPanel.classList.remove("hidden");
@@ -2425,6 +2427,7 @@ async function enterForceBuilder() {
     statusText.textContent = "COMMAND NETWORK // PERSONNEL " + currentPersonnelId;
 }
 async function openForceBuilder() {
+    if (isCommander()) { const n=Number(document.getElementById('commanderForceSlot').value); const p=PERSONNEL_SLOTS[n]; if(!p)return; currentPersonnelSlot=n+1; currentPlayerName=p.playerName; currentPersonnelId=String(p.personnelId||p.playerName).trim(); }
     if (!currentPersonnelSlot) return;
     document.getElementById("activePersonnelLabel").textContent =
         currentPersonnelId + " // " + currentPlayerName;
@@ -2526,6 +2529,9 @@ let deploymentLoadSequence = 0;
 let deploymentSaving = false;
 
 function openDeploymentMap() {
+    document.getElementById('commanderToolbar').classList.toggle('hidden',!isCommander());
+    if(isCommander()){currentPersonnelId='COMMANDER';currentPlayerName='Commander';}
+    markerMode('inspect'); loadMarkers();
     hideWorkflowScreens();
     deploymentScreen.classList.remove("hidden");
     workflowPanel.scrollTop = 0;
@@ -2575,6 +2581,7 @@ function clearDeploymentSelection() {
 }
 
 function handleDeploymentMapClick(event) {
+    if(isCommander()){editMarkerClick(event);return;} 
     if (deploymentSaving || event.target.closest("#deploymentFloating")) return;
     const cell = DEPLOYMENT_CELLS.find(c=>c.hex===event.target.getAttribute('data-hex'));
     if (!cell) { document.getElementById('deploymentStatus').textContent='SELECT AN AUTHORISED DEPLOYMENT HEX IN ZONES A–E.'; return; }
@@ -2597,7 +2604,7 @@ async function loadDeploymentRecords() {
 
     try {
         const results = await Promise.all([
-            apiGet("getForce", { personnelId: currentPersonnelId }),
+            (isCommander()?Promise.resolve({success:true,force:{units:[]}}):apiGet("getForce", { personnelId: currentPersonnelId })),
             apiGet("getDeploymentData")
         ]);
         if (sequence !== deploymentLoadSequence) return;
@@ -2617,7 +2624,7 @@ async function loadDeploymentRecords() {
         renderOtherDeploymentMarkers(results[1].deployments || []);
         renderDeploymentPersonnel(results[1].deployments || []);
 
-        if (!units.length) {
+        if (isCommander()) { status.textContent="COMMANDER // MAP EDITOR ACTIVE"; summary.textContent="COMMAND AUTHORITY // ALL PERSONNEL DEPLOYMENTS"; } else if (!units.length) {
             status.textContent = "NO FORCE REGISTERED // RETURN TO FORCE REGISTRATION BEFORE DEPLOYING.";
         } else if (savedDeploymentPoint) {
             status.textContent = "EXISTING LANDING ASSIGNMENT RETRIEVED // YOU MAY SELECT A NEW POSITION OR KEEP THIS ONE.";
@@ -2744,6 +2751,7 @@ for(const event of ['pointerup','pointercancel','lostpointercapture'])deployment
 window.addEventListener('resize',()=>{if(!deploymentFloat.classList.contains('hidden'))moveDeploymentPanel(deploymentFloat.offsetLeft,deploymentFloat.offsetTop);});
 
 function changePersonnel() {
+    commanderLogout();
     currentPersonnelSlot = null;
     selectedPersonnelSlot = null;
     personnelNameField.value = "";
@@ -3174,6 +3182,28 @@ function returnToPersonnel() {
 
 
 // Initial state: personnel selection is the terminal's landing screen.
+const BUILD_TIME="2026-11-28T03:55:59.929480+00:00";
+
+let commanderToken='', commanderExpiry=0, markerList=[], markerUndo=[], markerEditMode='inspect', movingMarker=null, markersReady=false, markerRevision='', markerBusy=false;
+function isCommander(){return !!commanderToken && Date.now()<commanderExpiry;}
+function randomSecret(){return Array.from(crypto.getRandomValues(new Uint8Array(32)),x=>x.toString(16).padStart(2,'0')).join('');}
+async function commanderRequest(action, data){
+ const requestId=randomSecret();
+ await fetch(FREEDOM_API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({...data,action,requestId})});
+ for(let i=0;i<8;i++){const r=await apiGet('commanderResult',{requestId});if(r.ready){if(!r.success)throw Error(r.error||'Request rejected');return r;}await new Promise(r=>setTimeout(r,600));}throw Error('No confirmation from database. Check deployment and reload before retrying.');
+}
+async function commanderLogin(){const f=document.getElementById('commanderPassword'),s=document.getElementById('commanderLoginStatus');const password=f.value;f.value='';const token=randomSecret();s.textContent='VERIFYING...';try{const r=await commanderRequest('commanderLogin',{password,token});commanderToken=token;commanderExpiry=r.expiry;currentPersonnelSlot=null;currentPersonnelId='COMMANDER';currentPlayerName='Commander';document.getElementById('dashboardPersonnelLabel').textContent='COMMANDER // ADMINISTRATIVE ACCESS';document.getElementById('commanderLogin').classList.add('hidden');showDashboard();s.textContent='';}catch(e){s.textContent=e.message;}}
+function commanderLogout(){const token=commanderToken;commanderToken='';commanderExpiry=0;markersReady=false;if(token)commanderRequest('commanderLogout',{token}).catch(()=>{});}
+function markerMode(mode){markerEditMode=mode;movingMarker=null;document.getElementById('markerStatus').textContent='MODE // '+mode.toUpperCase();}
+function drawMarkers(){const group=document.getElementById('commanderMarkers');group.innerHTML='';for(const m of markerList){const el=document.createElementNS('http://www.w3.org/2000/svg','g');el.setAttribute('class','unknown-site-marker');el.setAttribute('transform',`translate(${m.x} ${m.y})`);el.innerHTML='<circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text>';group.appendChild(el);}}
+async function loadMarkers(){markersReady=false;try{const r=await apiGet('mapLocations');if(!r.success)throw Error(r.error);markerList=r.markers;markerRevision=r.revision;markerUndo=[];markersReady=true;drawMarkers();document.getElementById('markerStatus').textContent=markerList.length+' LOCATIONS LOADED';}catch(e){document.getElementById('deploymentMapStatus').textContent='MAP LOCATIONS ERROR // '+e.message;document.getElementById('markerStatus').textContent=e.message;}}
+function snapshotMarkers(){markerUndo.push(JSON.stringify(markerList));}
+function undoMarker(){if(isCommander()&&!markerBusy&&markerUndo.length){markerList=JSON.parse(markerUndo.pop());movingMarker=null;drawMarkers();}}
+function editMarkerClick(e){if(!markersReady||markerBusy||e.target.closest('#deploymentFloating')||markerEditMode==='inspect')return;const b=document.getElementById('deploymentMapImage').getBoundingClientRect();if(!b.width||!b.height)return;const x=Math.round((e.clientX-b.left)*2048/b.width),y=Math.round((e.clientY-b.top)*1544/b.height);if(x<0||x>2048||y<0||y>1544)return;const near=markerList.map(m=>({m,d:Math.hypot(m.x-x,m.y-y)})).sort((a,b)=>a.d-b.d)[0];const hit=near&&near.d<=35?near.m:null;if(markerEditMode==='add'){if(hit)return;snapshotMarkers();markerList.push({id:'LOC-'+randomSecret().slice(0,16),x,y});}else if(markerEditMode==='remove'&&hit){snapshotMarkers();markerList=markerList.filter(m=>m.id!==hit.id);}else if(markerEditMode==='move'){if(!movingMarker){if(hit){movingMarker=hit.id;document.getElementById('markerStatus').textContent='SELECT NEW LOCATION';}return;}snapshotMarkers();const m=markerList.find(m=>m.id===movingMarker);if(m){m.x=x;m.y=y;}movingMarker=null;}drawMarkers();document.getElementById('markerStatus').textContent=markerList.length+' LOCATIONS // UNSAVED CHANGES';}
+async function saveMarkers(){if(!isCommander()||!markersReady||markerBusy)return;markerBusy=true;const s=document.getElementById('markerStatus');try{const r=await commanderRequest('saveMapLocations',{token:commanderToken,markers:markerList,revision:markerRevision});markerRevision=r.revision;markerUndo=[];s.textContent='MAP LOCATIONS SAVED';}catch(e){s.textContent=e.message;}finally{markerBusy=false;}}
+function updateBuild(){const el=document.getElementById('htmlBuild');if(el.dataset.loaded)return;el.dataset.loaded='1';const format=t=>new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Sydney',dateStyle:'medium',timeStyle:'medium',hour12:false}).format(new Date(t));el.textContent='HTML BUILD // '+format(BUILD_TIME)+' SYDNEY';const host=location.hostname.match(/^([^.]+)\.github\.io$/);const repo=location.pathname.split('/').filter(Boolean)[0];if(host&&repo)fetch('https://api.github.com/repos/'+encodeURIComponent(host[1])+'/'+encodeURIComponent(repo)+'/commits?path=index.html&per_page=1').then(r=>{if(!r.ok)throw Error();return r.json()}).then(a=>{if(a[0]?.commit?.committer?.date)el.textContent='LATEST HTML COMMIT // '+format(a[0].commit.committer.date)+' SYDNEY';}).catch(()=>{});}
+
+PERSONNEL_SLOTS.forEach((p,i)=>{const o=document.createElement("option");o.value=i;o.textContent=p.playerName;document.getElementById("commanderForceSlot").appendChild(o);});
 renderPersonnelSlots();
 viewport.style.display = "none";
 document.querySelector(".controls").style.display = "none";
