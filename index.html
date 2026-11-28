@@ -699,6 +699,9 @@ input[type="range"] {
 .unknown-site-disc { fill:#ffe66b; stroke:#151b0d; stroke-width:5; }
 .unknown-site-question { fill:#202515; font: bold 34px Arial,sans-serif; }
 .deployment-selection-overlay { z-index:2; }
+.deployment-zone-cell { fill:rgba(50,255,140,.32); stroke:#aaffbb; stroke-width:4; pointer-events:all; cursor:pointer; }
+.deployment-zone-cell:hover,.deployment-zone-cell:focus { fill:rgba(120,255,160,.65); stroke:white; }
+.deployment-zone-letter { fill:#eaffed; stroke:#17331a; stroke-width:5; paint-order:stroke; font:bold 27px monospace; text-anchor:middle; pointer-events:none; }
 .deployment-selected-disc { fill:rgba(80,255,120,.35); stroke:#caffce; stroke-width:7; stroke-dasharray:18 10; }
 .deployment-selected-core { fill:#caffce; stroke:#17331a; stroke-width:5; }
 .deployment-selected-label { fill:#e7ffe7; stroke:#071107; stroke-width:7; paint-order:stroke; font:bold 30px "Share Tech Mono",monospace; }
@@ -1048,8 +1051,8 @@ input[type="range"] {
 <g class="unknown-site-marker" transform="translate(1871.9 1359.1)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
 <g class="unknown-site-marker" transform="translate(1229.7 1400.9)"><circle r="23" class="unknown-site-disc"/><text y="8" text-anchor="middle" class="unknown-site-question">?</text></g>
                                         </svg>
-                                        <svg class="deployment-map-overlay deployment-selection-overlay" id="deploymentSelectionOverlay" viewBox="0 0 2048 1544" preserveAspectRatio="none" aria-hidden="true">
-                                            <g id="deploymentOtherMarkers"></g>
+                                        <svg class="deployment-map-overlay deployment-selection-overlay" id="deploymentSelectionOverlay" viewBox="0 0 2048 1544" preserveAspectRatio="none">
+                                            <g id="deploymentZoneCells"></g><g id="deploymentOtherMarkers"></g>
                                             <g id="deploymentSelectedMarker"></g>
                                         </svg>
                                     </div>
@@ -1059,7 +1062,7 @@ input[type="range"] {
                                     <span><i class="legend-selected"></i> YOUR SELECTED LANDING POSITION</span>
                                     <span><i class="legend-other"></i> REGISTERED PERSONNEL LANDING POSITION</span>
                                 </div>
-                                <p class="workflow-muted deployment-map-help">CLICK ANYWHERE INSIDE THE MAP TO PROPOSE A LANDING POSITION. YOUR SELECTION IS NOT SAVED UNTIL YOU CONFIRM IT.</p>
+                                <p class="workflow-muted deployment-map-help">SELECT A HIGHLIGHTED HEX IN ZONES A–E. YOUR SELECTION IS NOT SAVED UNTIL YOU CONFIRM IT.</p>
                             </div>
 
                             <aside class="deployment-control-panel">
@@ -1067,7 +1070,7 @@ input[type="range"] {
                                 <div class="deployment-coordinate-card">
                                     <span class="workflow-muted">PROPOSED LANDING POSITION</span>
                                     <strong id="deploymentCoordinate">NO POSITION SELECTED</strong>
-                                    <span class="workflow-muted" id="deploymentSelectionHint">Click the map to choose a position.</span>
+                                    <span class="workflow-muted" id="deploymentSelectionHint">Select a highlighted deployment hex.</span>
                                 </div>
                                 <div class="workflow-status" id="deploymentStatus" aria-live="polite">AWAITING LANDING POSITION.</div>
                                 <div class="workflow-actions deployment-actions">
@@ -1446,7 +1449,7 @@ const PERSONNEL_SLOTS = [
     { playerName: "Lt. Col. Mark", personnelId: "", accessCode: "********" },
     { playerName: "Lt. Col. Mitchel", personnelId: "", accessCode: "********" }
 ];
-   
+
 function renderPersonnelSlots() {
     const grid = document.getElementById("slotGrid");
     grid.innerHTML = "";
@@ -2488,6 +2491,18 @@ function openCompanyRoster() {
         target.textContent = "DATABASE ERROR: " + error.message;
     });
 }
+const DEPLOYMENT_CELLS = [{"zone":"A","hex":"0014","x":84,"y":1233},{"zone":"A","hex":"0015","x":84,"y":1315},{"zone":"A","hex":"0016","x":84,"y":1397},{"zone":"A","hex":"0114","x":155,"y":1274},{"zone":"A","hex":"0115","x":155,"y":1356},{"zone":"A","hex":"0116","x":155,"y":1439},{"zone":"B","hex":"0001","x":84,"y":161},{"zone":"B","hex":"0002","x":84,"y":244},{"zone":"B","hex":"0003","x":84,"y":326},{"zone":"B","hex":"0100","x":155,"y":120},{"zone":"B","hex":"0101","x":155,"y":203},{"zone":"B","hex":"0102","x":155,"y":285},{"zone":"C","hex":"1001","x":797,"y":161},{"zone":"C","hex":"1002","x":797,"y":244},{"zone":"C","hex":"1100","x":868,"y":120},{"zone":"C","hex":"1101","x":868,"y":203},{"zone":"C","hex":"1201","x":940,"y":161},{"zone":"C","hex":"1202","x":940,"y":244},{"zone":"D","hex":"2315","x":1724,"y":1356},{"zone":"D","hex":"2316","x":1724,"y":1439},{"zone":"D","hex":"2416","x":1795,"y":1397},{"zone":"D","hex":"2417","x":1795,"y":1480},{"zone":"D","hex":"2515","x":1866,"y":1356},{"zone":"D","hex":"2516","x":1866,"y":1439},{"zone":"E","hex":"1115","x":868,"y":1356},{"zone":"E","hex":"1116","x":868,"y":1439},{"zone":"E","hex":"1216","x":940,"y":1397},{"zone":"E","hex":"1217","x":940,"y":1480},{"zone":"E","hex":"1315","x":1011,"y":1356},{"zone":"E","hex":"1316","x":1011,"y":1439}];
+function deploymentCell(x,y) { return DEPLOYMENT_CELLS.find(c => c.x === Number(x) && c.y === Number(y)); }
+function deploymentPolygon(c) {
+ return [[-47.5,0],[-23.75,-41.2],[23.75,-41.2],[47.5,0],[23.75,41.2],[-23.75,41.2]].map(p=> (c.x+p[0])+','+(c.y+p[1])).join(' ');
+}
+function renderDeploymentZones() {
+ const group=document.getElementById('deploymentZoneCells');
+ group.innerHTML=DEPLOYMENT_CELLS.map(c=>'<polygon class="deployment-zone-cell" points="'+deploymentPolygon(c)+'" data-hex="'+c.hex+'" tabindex="0" role="button" aria-label="Zone '+c.zone+' hex '+c.hex+'"/><text class="deployment-zone-letter" x="'+c.x+'" y="'+(c.y+9)+'">'+c.zone+'</text>').join('');
+ group.querySelectorAll('polygon').forEach(p=>p.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();p.dispatchEvent(new MouseEvent('click',{bubbles:true}));}}));
+}
+function deploymentLabel(p) { const c=deploymentCell(p.x,p.y); return c ? 'ZONE '+c.zone+' // HEX '+c.hex : 'LEGACY POSITION // RESELECT'; }
+
 let selectedDeploymentPoint = null;
 let savedDeploymentPoint = null;
 let deploymentForceRecord = null;
@@ -2499,6 +2514,9 @@ function openDeploymentMap() {
     workflowPanel.scrollTop = 0;
     statusText.textContent = "PLANETARY DEPLOYMENT // LANDING ASSIGNMENT";
     selectedDeploymentPoint = null;
+    savedDeploymentPoint = null;
+    deploymentForceRecord = null;
+    renderDeploymentZones();
     renderDeploymentSelection();
     loadDeploymentRecords();
 }
@@ -2514,17 +2532,17 @@ function renderDeploymentSelection() {
     const point = selectedDeploymentPoint || savedDeploymentPoint;
     if (point) {
         selected.innerHTML =
-            '<circle class="deployment-selected-disc" cx="' + point.x + '" cy="' + point.y + '" r="48"></circle>' +
+            '<circle class="deployment-selected-disc" cx="' + point.x + '" cy="' + point.y + '" r="35"></circle>' +
             '<circle class="deployment-selected-core" cx="' + point.x + '" cy="' + point.y + '" r="12"></circle>' +
-            '<text class="deployment-selected-label" x="' + (point.x + 55) + '" y="' + (point.y - 48) + '">LANDING ZONE</text>';
-        coordinate.textContent = "MAP POSITION // X " + Math.round(point.x) + " / Y " + Math.round(point.y);
+            '<text class="deployment-selected-label" x="' + (point.x + 55) + '" y="' + (point.y - 48) + '">SELECTED</text>';
+        coordinate.textContent = deploymentLabel(point);
         hint.textContent = selectedDeploymentPoint
             ? "Proposed position. Confirm to save this landing assignment."
             : "Previously saved landing position.";
     } else {
         selected.innerHTML = "";
         coordinate.textContent = "NO POSITION SELECTED";
-        hint.textContent = "Click the map to choose a position.";
+        hint.textContent = "Select a highlighted deployment hex.";
     }
 
     confirm.disabled = !selectedDeploymentPoint || !deploymentForceRecord || !deploymentForceRecord.units || !deploymentForceRecord.units.length;
@@ -2538,11 +2556,9 @@ function clearDeploymentSelection() {
 }
 
 function handleDeploymentMapClick(event) {
-    const stage = document.getElementById("deploymentMapStage");
-    const rect = stage.getBoundingClientRect();
-    const x = Math.max(0, Math.min(2048, ((event.clientX - rect.left) / rect.width) * 2048));
-    const y = Math.max(0, Math.min(1544, ((event.clientY - rect.top) / rect.height) * 1544));
-    selectedDeploymentPoint = { x: Math.round(x), y: Math.round(y) };
+    const cell = DEPLOYMENT_CELLS.find(c=>c.hex===event.target.getAttribute('data-hex'));
+    if (!cell) { document.getElementById('deploymentStatus').textContent='SELECT AN AUTHORISED DEPLOYMENT HEX IN ZONES A–E.'; return; }
+    selectedDeploymentPoint = {x:cell.x,y:cell.y};
     renderDeploymentSelection();
     document.getElementById("deploymentStatus").textContent = "LANDING POSITION SELECTED // CONFIRM TO COMMIT YOUR FORCE DEPLOYMENT.";
 }
@@ -2635,7 +2651,7 @@ function renderDeploymentPersonnel(deployments) {
         const name = document.createElement("strong");
         name.textContent = item.playerName || item.personnelId;
         const detail = document.createElement("span");
-        detail.textContent = "MAP X " + Math.round(Number(item.mapX)) + " // Y " + Math.round(Number(item.mapY));
+        detail.textContent = deploymentLabel({x:item.mapX,y:item.mapY});
         entry.appendChild(name);
         entry.appendChild(detail);
         list.appendChild(entry);
