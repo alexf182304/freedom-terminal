@@ -2344,6 +2344,7 @@ function showDashboard() {
     hideWorkflowScreens();
     dashboardScreen.classList.remove("hidden");
     refreshMailSummary();
+    if (!isCommander() && currentPersonnelId) loadForceBundle(currentPersonnelId).catch(()=>{});
     workflowPanel.scrollTop = 0;
     statusText.textContent = "COMMAND NETWORK // READY";
 }
@@ -2757,7 +2758,7 @@ for(const event of ['pointerup','pointercancel','lostpointercapture'])deployment
 window.addEventListener('resize',()=>{if(!deploymentFloat.classList.contains('hidden'))moveDeploymentPanel(deploymentFloat.offsetLeft,deploymentFloat.offsetTop);});
 
 function changePersonnel() {
-    currentPersonnelId=null; resetMailSummary();
+    currentPersonnelId=null; forceBundles.clear(); inboxCache.clear(); resetMailSummary();
     commanderLogout();
     currentPersonnelSlot = null;
     selectedPersonnelSlot = null;
@@ -2784,16 +2785,10 @@ function apiGet(action, params) {
 }
 async function loadCatalogueAndForce() {
     try {
-        const results = await Promise.all([
-            apiGet("catalogue"),
-            apiGet("settings"),
-            apiGet("upgrades")
-        ]);
-
-        console.log("Catalogue:", results[0]);
-        console.log("Settings:", results[1]);
-        console.log("Upgrades:", results[2]);
-
+        const id = currentPersonnelId;
+        const bundle = await loadForceBundle(id);
+        if (id !== currentPersonnelId || forceScreen.classList.contains('hidden')) return;
+        const results = [bundle.catalogue,bundle.settings,bundle.upgrades];
         if (!results[0].success) {
             throw new Error(results[0].error || "Catalogue retrieval failed.");
         }
@@ -2809,9 +2804,7 @@ async function loadCatalogueAndForce() {
             campaignSettings.RP_BUDGET = 300;
         }
 
-        const forceResult = await apiGet("getForce", {
-            personnelId: currentPersonnelId
-        });
+        const forceResult = bundle.force;
         if (!forceResult.success) {
             throw new Error(forceResult.error || "Force retrieval failed.");
         }
@@ -3137,6 +3130,7 @@ async function saveForceDraft() {
             })
         };
 
+        forceBundles.delete(forcePayload.personnelId);
         await fetch(FREEDOM_API_URL, {
             method: "POST",
             mode: "no-cors",
@@ -3189,7 +3183,7 @@ function returnToPersonnel() {
 
 
 // Initial state: personnel selection is the terminal's landing screen.
-const BUILD_TIME="2026-11-28T08:31:49.202073+00:00";
+const BUILD_TIME="2026-11-28T08:43:49.731047+00:00";
 
 let commanderToken='', commanderExpiry=0, markerList=[], markerUndo=[], markerEditMode='inspect', movingMarker=null, markersReady=false, markerRevision='', markerBusy=false;
 function isCommander(){return !!commanderToken && Date.now()<commanderExpiry;}
@@ -3219,10 +3213,11 @@ function toggleMailFolder(){if(mailBusy)return;mailTrash=!mailTrash;mailEl('mail
 function mailEl(id){return document.getElementById(id);}
 function mailText(tag,text,parent){const e=document.createElement(tag);e.textContent=text;parent.appendChild(e);return e;}
 function mailDate(t){return new Intl.DateTimeFormat('en-AU',{timeZone:'Australia/Sydney',dateStyle:'medium',timeStyle:'short',hour12:false}).format(new Date(t));}
-async function openMail(compose=false){const generation=++mailGeneration;const admin=isCommander();const id=admin?'COMMANDER':currentPersonnelId;if(mailIdentity!==id)mailTrash=false;mailIdentity=id;mailReady=false;mailDeleted=new Set();mailEl('mailFolderButton').textContent=mailTrash?'INBOX':'DELETED ITEMS';hideWorkflowScreens();mailEl('mailScreen').classList.remove('hidden');mailEl('mailCompose').classList.add('hidden');mailEl('mailComposeButton').classList.toggle('hidden',!admin);mailEl('mailList').replaceChildren();mailEl('mailReader').textContent='SELECT A MESSAGE';mailEl('mailStatus').textContent='RETRIEVING CORRESPONDENCE...';workflowPanel.scrollTop=0;statusText.textContent='CONTRACT NETWORK';mailRead=new Set();mailMessages=[HOMESTEAD_MAIL];renderMailList();if(compose&&admin)showCompose();try{const r=admin?await commanderRequest('commanderInbox',{token:commanderToken}):await apiGet('inbox',{personnelId:id});if(generation!==mailGeneration||mailEl('mailScreen').classList.contains('hidden'))return;if(!r.success)throw Error(r.error);mailMessages=[...(r.messages||[]),HOMESTEAD_MAIL];mailDeleted=new Set(r.deleted||[]);mailRead=new Set(r.read||[]);mailReady=true;refreshMailSummary();renderMailList();mailEl('mailStatus').textContent=mailMessages.length+' MESSAGES // '+(admin?(r.limited?'LATEST MESSAGE ONLY // ARCHIVE LIMIT':'ALL SENT CORRESPONDENCE'):'PERSONNEL INBOX');}catch(e){if(generation===mailGeneration)mailEl('mailStatus').textContent=e.message;}}
+async function openMail(compose=false){const generation=++mailGeneration;const admin=isCommander();const id=admin?'COMMANDER':currentPersonnelId;if(mailIdentity!==id)mailTrash=false;mailIdentity=id;mailReady=false;mailDeleted=new Set();mailEl('mailFolderButton').textContent=mailTrash?'INBOX':'DELETED ITEMS';hideWorkflowScreens();mailEl('mailScreen').classList.remove('hidden');mailEl('mailCompose').classList.add('hidden');mailEl('mailComposeButton').classList.toggle('hidden',!admin);mailEl('mailList').replaceChildren();mailEl('mailReader').textContent='SELECT A MESSAGE';mailEl('mailStatus').textContent='RETRIEVING CORRESPONDENCE...';workflowPanel.scrollTop=0;statusText.textContent='CONTRACT NETWORK';mailRead=new Set();mailMessages=[HOMESTEAD_MAIL];renderMailList();if(compose&&admin)showCompose();try{const r=admin?await commanderRequest('commanderInbox',{token:commanderToken}):await loadInboxCached(id);if(generation!==mailGeneration||mailEl('mailScreen').classList.contains('hidden'))return;if(!r.success)throw Error(r.error);mailMessages=[...(r.messages||[]),HOMESTEAD_MAIL];mailDeleted=new Set(r.deleted||[]);mailRead=new Set(r.read||[]);mailReady=true;refreshMailSummary();renderMailList();mailEl('mailStatus').textContent=mailMessages.length+' MESSAGES // '+(admin?(r.limited?'LATEST MESSAGE ONLY // ARCHIVE LIMIT':'ALL SENT CORRESPONDENCE'):'PERSONNEL INBOX');}catch(e){if(generation===mailGeneration)mailEl('mailStatus').textContent=e.message;}}
 function renderMailList(selected){const list=mailEl('mailList');list.replaceChildren();const visible=mailMessages.filter(m=>mailDeleted.has(m.id)===mailTrash);if(!visible.length)mailText('p','NO MESSAGES IN THIS FOLDER',list);for(const m of visible){const b=mailText('button','',list);b.style.borderLeftColor=priorityColor(m.priority);b.className='mail-item'+(m.id===selected?' active':'');mailText('strong',(mailRead.has(m.id)?'':'● ')+m.sender,b);mailText('span',m.subject,b);mailText('span',(m.priority||'STANDARD')+' // '+m.category+' // '+(m.originalBriefing?'INITIAL CORRESPONDENCE':mailDate(m.sent)),b);b.onclick=()=>readMail(m);const a=mailText('button',mailTrash?'RESTORE':'DELETE',list);a.disabled=!mailReady||mailBusy;a.onclick=()=>changeMailVisibility(m,!mailTrash);}}
-async function readMail(m){if(!mailReady||mailBusy)return;const id=mailIdentity,gen=mailGeneration; if(!mailRead.has(m.id)){mailBusy=true;try{if(isCommander())await commanderRequest('commanderMailRead',{token:commanderToken,messageId:m.id});else{await fetch(FREEDOM_API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'mailRead',personnelId:id,messageId:m.id})});let ok=false;for(let i=0;i<8;i++){const r=await apiGet('inbox',{personnelId:id});if(r.success&&(r.read||[]).includes(m.id)){ok=true;break;}await new Promise(r=>setTimeout(r,600));}if(!ok)throw Error('Read status not confirmed. Try again.');}if(gen!==mailGeneration||id!==currentPersonnelId||mailEl('mailScreen').classList.contains('hidden'))return;mailRead.add(m.id);refreshMailSummary();}catch(e){mailEl('mailStatus').textContent=e.message;return;}finally{mailBusy=false;}}renderMailList(m.id);if(m.originalBriefing){openTransmission(true);return;}const r=mailEl('mailReader');r.replaceChildren();mailText('h2',m.subject,r);mailText('p','FROM: '+m.sender+'\nTO: '+m.recipient+'\n'+(m.priority||'STANDARD')+' // '+m.category+' // '+mailDate(m.sent),r);r.appendChild(document.createElement('hr'));mailText('div',m.body,r);if(m.attachment==='HOMESTEAD'){const b=mailText('button','OPEN CONTRACT ATTACHMENT',r);b.onclick=openTransmission;}}
-async function changeMailVisibility(m,deleted){if(!mailReady||mailBusy)return;const id=mailIdentity,gen=mailGeneration,admin=isCommander();mailBusy=true;renderMailList();try{if(admin)await commanderRequest('commanderMailVisibility',{token:commanderToken,messageId:m.id,deleted});else{await fetch(FREEDOM_API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'mailVisibility',personnelId:id,messageId:m.id,deleted})});let verified=false;for(let i=0;i<8;i++){const r=await apiGet('inbox',{personnelId:id});if(r.success&&Array.isArray(r.deleted)&&r.deleted.includes(m.id)===deleted){verified=true;break;}await new Promise(r=>setTimeout(r,600));}if(!verified)throw Error('Database did not confirm change. Refresh inbox.');}if(gen===mailGeneration){if(deleted)mailDeleted.add(m.id);else mailDeleted.delete(m.id);refreshMailSummary();mailEl('mailReader').textContent='SELECT A MESSAGE';mailEl('mailStatus').textContent=deleted?'MESSAGE MOVED TO DELETED ITEMS':'MESSAGE RESTORED';}}catch(e){if(gen===mailGeneration)mailEl('mailStatus').textContent=e.message;}finally{mailBusy=false;renderMailList();}}
+function displayMailBody(m){if(m.originalBriefing)return;const r=mailEl('mailReader');r.replaceChildren();mailText('h2',m.subject,r);mailText('p','FROM: '+m.sender+'\nTO: '+m.recipient+'\n'+(m.priority||'STANDARD')+' // '+m.category+' // '+mailDate(m.sent),r);r.appendChild(document.createElement('hr'));mailText('div',m.body,r);if(m.attachment==='HOMESTEAD'){const b=mailText('button','OPEN CONTRACT ATTACHMENT',r);b.onclick=openTransmission;}}
+async function readMail(m){if(!mailReady||mailBusy)return;const id=mailIdentity,gen=mailGeneration;displayMailBody(m); if(!mailRead.has(m.id)){mailBusy=true;inboxCache.delete(id);try{if(isCommander())await commanderRequest('commanderMailRead',{token:commanderToken,messageId:m.id});else{await fetch(FREEDOM_API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'mailRead',personnelId:id,messageId:m.id})});let ok=false;for(let i=0;i<8;i++){const r=await apiGet('inbox',{personnelId:id});if(r.success&&(r.read||[]).includes(m.id)){storeInbox(id,r);ok=true;break;}await new Promise(r=>setTimeout(r,600));}if(!ok)throw Error('Read status not confirmed. Try again.');}if(gen!==mailGeneration||id!==currentPersonnelId||mailEl('mailScreen').classList.contains('hidden'))return;mailRead.add(m.id);refreshMailSummary();}catch(e){mailEl('mailStatus').textContent=e.message;return;}finally{mailBusy=false;}}renderMailList(m.id);if(m.originalBriefing && !mailEl('mailScreen').classList.contains('hidden'))openTransmission(true);}
+async function changeMailVisibility(m,deleted){if(!mailReady||mailBusy)return;const id=mailIdentity,gen=mailGeneration,admin=isCommander();mailBusy=true;inboxCache.delete(id);renderMailList();try{if(admin)await commanderRequest('commanderMailVisibility',{token:commanderToken,messageId:m.id,deleted});else{await fetch(FREEDOM_API_URL,{method:'POST',mode:'no-cors',headers:{'Content-Type':'text/plain'},body:JSON.stringify({action:'mailVisibility',personnelId:id,messageId:m.id,deleted})});let verified=false;for(let i=0;i<8;i++){const r=await apiGet('inbox',{personnelId:id});if(r.success&&Array.isArray(r.deleted)&&r.deleted.includes(m.id)===deleted){storeInbox(id,r);verified=true;break;}await new Promise(r=>setTimeout(r,600));}if(!verified)throw Error('Database did not confirm change. Refresh inbox.');}if(gen===mailGeneration){if(deleted)mailDeleted.add(m.id);else mailDeleted.delete(m.id);refreshMailSummary();mailEl('mailReader').textContent='SELECT A MESSAGE';mailEl('mailStatus').textContent=deleted?'MESSAGE MOVED TO DELETED ITEMS':'MESSAGE RESTORED';}}catch(e){if(gen===mailGeneration)mailEl('mailStatus').textContent=e.message;}finally{mailBusy=false;renderMailList();}}
 function showCompose(){if(!isCommander())return;const s=mailEl('mailRecipient');s.replaceChildren();const all=mailText('option','ALL COMPANY',s);all.value='ALL';PERSONNEL_SLOTS.forEach((p,i)=>{const o=mailText('option',p.playerName,s);o.value=String(p.personnelId||p.playerName||('PLAYER00'+(i+1))).trim();});mailEl('mailCompose').classList.remove('hidden');mailEl('mailCompose').scrollIntoView({block:'nearest'});}
 async function sendMail(){if(!isCommander())return;const b=mailEl('mailSend');if(b.disabled)return;b.disabled=true;const s=mailEl('mailStatus');s.textContent='TRANSMITTING...';try{await commanderRequest('sendMail',{token:commanderToken,recipient:mailEl('mailRecipient').value,sender:mailEl('mailSender').value,category:mailEl('mailCategory').value,priority:mailEl('mailPriority').value,subject:mailEl('mailSubject').value,body:mailEl('mailBody').value,attachment:mailEl('mailAttachment').checked?'HOMESTEAD':''});mailEl('mailCompose').reset();await openMail();mailEl('mailStatus').textContent='MESSAGE SENT';}catch(e){s.textContent=e.message;}finally{b.disabled=false;}}
 
@@ -3230,7 +3225,21 @@ async function sendMail(){if(!isCommander())return;const b=mailEl('mailSend');if
 let summaryGeneration=0,summaryIdentity='',summaryIds=null,toastTimer;
 function priorityColor(p){return p==='URGENT'?'#ff7777':p==='IMPORTANT'?'#f0ce75':'#a5f5ac';}
 function resetMailSummary(){summaryGeneration++;summaryIdentity='';summaryIds=null;mailEl('mailBadge').classList.add('hidden');mailEl('contractNetworkButton').classList.remove('has-mail');const t=mailEl('mailToast');if(t)t.classList.add('hidden');}
-async function refreshMailSummary(){const id=currentPersonnelId,admin=isCommander();if(!id||(id==='COMMANDER'&&!admin)||!mailEl('personnelScreen').classList.contains('hidden'))return; if(summaryIdentity!==id){resetMailSummary();summaryIdentity=id;}const gen=++summaryGeneration;try{const r=admin?await commanderRequest('commanderMailSummary',{token:commanderToken}):await apiGet('mailSummary',{personnelId:id});if(gen!==summaryGeneration||id!==currentPersonnelId||!r.success)return;const badge=mailEl('mailBadge'),button=mailEl('contractNetworkButton');button.style.setProperty('--mail-color',priorityColor(r.priority));badge.textContent=r.count+' NEW';badge.classList.toggle('hidden',!r.count);button.classList.toggle('has-mail',!!r.count);if(summaryIds&&r.ids.some(x=>!summaryIds.has(x))){const t=mailEl('mailToast');t.style.setProperty('--mail-color',priorityColor(r.priority));t.textContent='INCOMING CORRESPONDENCE DETECTED // '+r.count+' UNREAD';t.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('hidden'),6500);}summaryIds=new Set(r.ids);}catch(e){console.warn('Mail notification check failed',e);}}
+async function refreshMailSummary(){const id=currentPersonnelId,admin=isCommander();if(!id||(id==='COMMANDER'&&!admin)||!mailEl('personnelScreen').classList.contains('hidden'))return; if(summaryIdentity!==id){resetMailSummary();summaryIdentity=id;}const gen=++summaryGeneration;try{const r=admin?await commanderRequest('commanderMailSummary',{token:commanderToken}):summarizeInbox(await loadInboxCached(id));if(gen!==summaryGeneration||id!==currentPersonnelId||!r.success)return;const badge=mailEl('mailBadge'),button=mailEl('contractNetworkButton');button.style.setProperty('--mail-color',priorityColor(r.priority));badge.textContent=r.count+' NEW';badge.classList.toggle('hidden',!r.count);button.classList.toggle('has-mail',!!r.count);if(summaryIds&&r.ids.some(x=>!summaryIds.has(x))){const t=mailEl('mailToast');t.style.setProperty('--mail-color',priorityColor(r.priority));t.textContent='INCOMING CORRESPONDENCE DETECTED // '+r.count+' UNREAD';t.classList.remove('hidden');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.add('hidden'),6500);}summaryIds=new Set(r.ids);}catch(e){console.warn('Mail notification check failed',e);}}
+
+// Session-only caches: deduplicate in-flight reads and expire snapshots.
+const forceBundles = new Map(), inboxCache = new Map();
+function cachedRequest(map,key,ttl,request){
+ const old=map.get(key); if(old && (old.pending || Date.now()-old.at<ttl)) return old.promise;
+ const entry={pending:true,at:0};
+ entry.promise=Promise.resolve().then(request).then(r=>{if(!r.success)throw Error(r.error||'Database request failed');entry.pending=false;entry.at=Date.now();return r;},e=>{if(map.get(key)===entry)map.delete(key);throw e;}).catch(e=>{if(map.get(key)===entry)map.delete(key);throw e;});
+ map.set(key,entry);return entry.promise;
+}
+function loadForceBundle(id){return cachedRequest(forceBundles,id,60000,()=>apiGet('forceBootstrap',{personnelId:id}));}
+function loadInboxCached(id){return cachedRequest(inboxCache,id,55000,()=>apiGet('inbox',{personnelId:id}));}
+function storeInbox(id,r){inboxCache.set(id,{pending:false,at:Date.now(),promise:Promise.resolve(r)});}
+function summarizeInbox(r){const read=new Set(r.read||[]),deleted=new Set(r.deleted||[]);const unread=[...(r.messages||[]),HOMESTEAD_MAIL].filter(m=>!read.has(m.id)&&!deleted.has(m.id));return {success:true,count:unread.length,ids:unread.map(m=>m.id),priority:unread.some(m=>m.priority==='URGENT')?'URGENT':unread.some(m=>m.priority==='IMPORTANT')?'IMPORTANT':'STANDARD'};}
+
 setInterval(refreshMailSummary,60000);
 
 PERSONNEL_SLOTS.forEach((p,i)=>{const o=document.createElement("option");o.value=i;o.textContent=p.playerName;document.getElementById("commanderForceSlot").appendChild(o);});
